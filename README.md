@@ -197,7 +197,7 @@ docs/                   specification.md, rule-reference.md, limitations.md
 site/                   static landing page (no build step)
 ```
 
-The landing page in `site/` is plain HTML/CSS/JS. To deploy it on Vercel, import this repository and set **Root Directory** to `site`, with Framework Preset "Other" and no build command. To preview it locally, open `site/index.html`.
+The landing page in `site/` was designed with the [anti-slop](https://github.com/miqdadbadjuber/anti-slop) rules by Miqdad Badjuber (MIT). Its direction is in [site/DESIGN.md](site/DESIGN.md) and its gate report in [site/DELIVERY-GATE.md](site/DELIVERY-GATE.md). It uses IBM Plex fonts (SIL OFL 1.1, see `site/fonts/OFL.txt`). The page is plain HTML/CSS/JS. To deploy it on Vercel, import this repository and set **Root Directory** to `site`, with Framework Preset "Other" and no build command. To preview it locally, open `site/index.html`.
 
 To add a rule or an ORM detector: add a fixture case to `test/laravel.test.ts` or `test/nestjs.test.ts` first, covering both a violation and a compliant variant. Adapters implement `prepare()` → `analyze(file, content)`. The core only sees normalized dependencies, data-access operations, catch sites and unresolved references.
 
