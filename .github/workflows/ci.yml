@@ -5,11 +5,13 @@ on:
   pull_request:
 jobs:
   test:
+    # The test runner (vitest 5) needs Node 22+; the CLI itself supports Node 20 (see the node20 job).
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: [20, 22]
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,7 +28,26 @@ jobs:
       - name: Fixtures behave as documented
         shell: bash
         run: |
-          node dist/cli/index.js check -C fixtures/laravel-valid
-          node dist/cli/index.js check -C fixtures/nestjs-valid
-          ! node dist/cli/index.js check -C fixtures/laravel-violations
-          ! node dist/cli/index.js check -C fixtures/nestjs-violations
+          for s in laravel nestjs symfony express nextjs django fastapi spring; do
+            node dist/cli/index.js check -C fixtures/$s-valid
+            ! node dist/cli/index.js check -C fixtures/$s-violations
+          done
+
+  node20:
+    # Smoke test: the published CLI runs on the oldest supported Node version.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: CLI on every fixture
+        shell: bash
+        run: |
+          for s in laravel nestjs symfony express nextjs django fastapi spring; do
+            node dist/cli/index.js check -C fixtures/$s-valid
+            ! node dist/cli/index.js check -C fixtures/$s-violations
+          done

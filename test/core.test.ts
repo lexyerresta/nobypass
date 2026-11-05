@@ -223,6 +223,23 @@ describe('--since (changed-code enforcement)', () => {
     const dir = legacyRepo();
     expect(check(dir, { since: 'does-not-exist' }).exitCode).toBe(2);
   });
+
+  // Windows CI runners use 8.3 short temp paths (C:\Users\RUNNER~1) while git reports long paths.
+  it.skipIf(process.platform !== 'win32')('matches changed files when the working directory is an 8.3 short path', () => {
+    const dir = legacyRepo();
+    const short = spawnSync('cmd', ['/d', '/s', '/c', `"for %I in ("${dir}") do @echo %~sI"`], {
+      encoding: 'utf8',
+      windowsVerbatimArguments: true,
+    }).stdout.trim();
+    expect(fs.existsSync(short)).toBe(true);
+    fs.writeFileSync(
+      path.join(dir, 'app/Http/Controllers/UserController.php'),
+      CONTROLLER_QUERY.replace('class UserController {', 'use Illuminate\\Support\\Facades\\DB;\nclass UserController { public function j() { return DB::table("t")->get(); }'),
+    );
+    const r = check(short, { since: 'main' });
+    expect(r.exitCode).toBe(1);
+    expect(r.findings.filter((f) => f.blocking).map((f) => f.symbol)).toEqual(['DB::table']);
+  });
 });
 
 describe('fixtures', () => {

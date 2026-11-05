@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 
 export class GitError extends Error {}
@@ -12,8 +13,23 @@ function git(cwd: string, args: string[]): string {
   }
 }
 
+/**
+ * Canonical absolute path: resolves symlinks and, on Windows, 8.3 short names (C:\Users\RUNNER~1)
+ * so paths from git and from the file system compare equal. Works for paths that do not exist yet
+ * by canonicalizing the nearest existing parent.
+ */
+export function canonical(p: string): string {
+  const abs = path.resolve(p);
+  try {
+    return fs.realpathSync.native(abs);
+  } catch {
+    const parent = path.dirname(abs);
+    return parent === abs ? abs : path.join(canonical(parent), path.basename(abs));
+  }
+}
+
 export function gitRoot(cwd: string): string {
-  return path.resolve(git(cwd, ['rev-parse', '--show-toplevel']).trim());
+  return canonical(git(cwd, ['rev-parse', '--show-toplevel']).trim());
 }
 
 export interface ChangeSet {

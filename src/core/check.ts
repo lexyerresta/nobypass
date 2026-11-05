@@ -3,7 +3,7 @@ import path from 'node:path';
 import { CONTRACT_FILE, PROPOSED_FILE, ContractError, loadContractFile, type Contract } from './config.js';
 import { NON_BASELINABLE, readBaseline } from './baseline.js';
 import { analyzeProject, type ProjectRun } from './engine.js';
-import { changesSince, GitError, type ChangeSet } from './git.js';
+import { canonical, changesSince, GitError, type ChangeSet } from './git.js';
 import { applyExceptions, evaluateCycles } from './rules.js';
 import { toPosix } from './files.js';
 import type { ClassifiedFinding, FileAnalysis, Finding } from './types.js';
@@ -80,7 +80,7 @@ interface SinceContext {
 }
 
 function gitRelative(changes: ChangeSet, abs: string): string {
-  return toPosix(path.relative(changes.gitRoot, abs));
+  return toPosix(path.relative(changes.gitRoot, canonical(abs)));
 }
 
 function buildSinceContext(run: ProjectRun, changes: ChangeSet): SinceContext {
