@@ -37,6 +37,7 @@ Verification ran in Microsoft Edge through Playwright: light and dark themes, at
 - All five copy buttons copy the exact command, show "Copied" and announce it in the status line.
 - With the clipboard blocked, a copy button shows "Failed" and the status line gives instructions.
 - The "Read the source on GitHub", footer and limitation links point to real URLs in the repository.
+- The "Nodezio" links in the header and footer go to https://nodezio.com, which returns 200. The header link has a 44px tap target and sits second in the Tab order, right after the wordmark.
 
 ## Block 2: Purpose-Gate (technique allowed, reason written)
 
