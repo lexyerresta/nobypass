@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NoBypass — architecture contracts for AI-written code</title>
+  <meta name="description" content="Your AI said it followed your architecture. Check. NoBypass is an open-source, offline CLI that fails the PR when Laravel or NestJS code bypasses the layers your team approved.">
+  <meta property="og:title" content="NoBypass — Your AI said it followed your architecture. Check.">
+  <meta property="og:description" content="Open-source, offline architecture contract checker for Laravel and NestJS. No LLM, no API key.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0e0f0d">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="NoBypass home">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
+        NoBypass
+      </a>
+      <nav aria-label="Primary">
+        <a href="#demo">Demo</a>
+        <a href="#how">How it works</a>
+        <a href="#rules">Rules</a>
+        <a href="#ci">CI &amp; agents</a>
+        <a class="gh" href="https://github.com/lexyerresta/nobypass">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">Open source · MIT · runs offline · Laravel &amp; NestJS</p>
+        <h1>Your AI said it followed your architecture. <span class="hl">Check.</span></h1>
+        <p class="lede">NoBypass fails the pull request when generated code works but skips the layers your team approved — a query in a controller, a repository injected where only a service belongs, a <code>catch</code> that swallows everything.</p>
+        <div class="install">
+          <code id="install-cmd">npx nobypass init</code>
+          <button class="copy" data-copy="npx nobypass init" aria-label="Copy install command">Copy</button>
+        </div>
+        <div class="cta">
+          <a class="btn primary" href="#quickstart">Quick start</a>
+          <a class="btn" href="https://github.com/lexyerresta/nobypass">Read the source</a>
+        </div>
+        <p class="fine">Static analysis only. No LLM, no API key, no account, no upload.</p>
+      </div>
+
+      <figure class="layers" aria-label="Diagram: a controller call that skips the approved layers is blocked">
+        <svg viewBox="0 0 360 330" role="img">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="arrow-ok"/></marker>
+            <marker id="arr-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="arrow-bad"/></marker>
+          </defs>
+          <g class="layer"><rect x="40" y="10" width="200" height="40" rx="6"/><text x="56" y="35">Controller</text></g>
+          <g class="layer"><rect x="40" y="80" width="200" height="40" rx="6"/><text x="56" y="105">Support</text></g>
+          <g class="layer"><rect x="40" y="150" width="200" height="40" rx="6"/><text x="56" y="175">Service</text></g>
+          <g class="layer"><rect x="40" y="220" width="200" height="40" rx="6"/><text x="56" y="245">Repository</text></g>
+          <g class="layer model"><rect x="40" y="290" width="200" height="34" rx="6"/><text x="56" y="312">Model</text></g>
+          <path class="edge" d="M140 50v26" marker-end="url(#arr)"/>
+          <path class="edge" d="M140 120v26" marker-end="url(#arr)"/>
+          <path class="edge" d="M140 190v26" marker-end="url(#arr)"/>
+          <path class="edge" d="M140 260v26" marker-end="url(#arr)"/>
+          <path class="bypass" d="M240 30 C 330 30, 330 300, 244 306" marker-end="url(#arr-bad)"/>
+          <g class="stamp" transform="translate(262 150)">
+            <rect x="0" y="0" width="92" height="44" rx="4"/>
+            <text x="46" y="19" text-anchor="middle">BND002</text>
+            <text x="46" y="35" text-anchor="middle" class="small">blocked</text>
+          </g>
+        </svg>
+        <figcaption><code>User::where()</code> in a controller works. It also skips three approved layers.</figcaption>
+      </figure>
+    </section>
+
+    <!-- PROBLEM -->
+    <section class="problem wrap">
+      <div class="cols3">
+        <div><h3>Tests pass</h3><p>The endpoint returns the right JSON. Nothing in the test suite cares which layer ran the query.</p></div>
+        <div><h3>The linter passes</h3><p>Formatting, types and unused imports are fine. Linters don't know your layering.</p></div>
+        <div><h3>The architecture drifted</h3><p>Ten agent sessions later, half the controllers talk to the database and the service layer is decoration.</p></div>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section id="demo" class="demo wrap">
+      <div class="section-head">
+        <h2>Same feature, two versions</h2>
+        <p>Real output from the fixtures in the repository. Switch the framework, then compare what the agent wrote with the fix.</p>
+      </div>
+      <div class="demo-controls">
+        <div class="seg" role="tablist" aria-label="Framework">
+          <button role="tab" aria-selected="true" data-fw="laravel">Laravel</button>
+          <button role="tab" aria-selected="false" data-fw="nestjs">NestJS</button>
+        </div>
+        <div class="seg" role="tablist" aria-label="Version">
+          <button role="tab" aria-selected="true" data-ver="bad">Agent's version</button>
+          <button role="tab" aria-selected="false" data-ver="good">After the fix</button>
+        </div>
+      </div>
+
+      <div class="demo-grid">
+        <div class="pane">
+          <div class="pane-bar"><span class="dot"></span><span id="code-file">app/Http/Controllers/UserController.php</span></div>
+<pre class="code" id="code-laravel-bad"><code>&lt;?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreUserRequest;
+use App\Models\User;
+use App\Repositories\UserRepository;
+use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+
+class UserController extends Controller
+{
+    public function __construct(
+        private readonly UserService $service,
+        private readonly UserRepository $repository,
+    ) {
+    }
+
+    public function index(): JsonResponse
+    {
+        // "Quick fix" from an AI agent: query straight from the controller.
+        $users = User::where('active', true)-&gt;orderBy('name')-&gt;get();
+
+        return response()-&gt;json($users);
+    }
+
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        return response()-&gt;json($this-&gt;service-&gt;register($request-&gt;validated()), 201);
+    }
+}</code></pre>
+<pre class="code" id="code-laravel-good" hidden><code>&lt;?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreUserRequest;
+use App\Support\UserSupport;
+use Illuminate\Http\JsonResponse;
+
+class UserController extends Controller
+{
+    public function __construct(private readonly UserSupport $users)
+    {
+    }
+
+    public function index(): JsonResponse
+    {
+        return response()-&gt;json($this-&gt;users-&gt;listActive());
+    }
+
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        return response()-&gt;json($this-&gt;users-&gt;register($request-&gt;validated()), 201);
+    }
+}</code></pre>
+<pre class="code" id="code-nestjs-bad" hidden><code>import { Body, Controller, Get, Post } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import type { UsersRepository } from './users.repository';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UsersService } from './users.service';
+
+@Controller('users')
+export class UsersController {
+  constructor(
+    private readonly users: UsersService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  // "Quick fix" from an AI agent: read straight from Prisma in the controller.
+  @Get()
+  list() {
+    return this.prisma.user.findMany({ where: { active: true } });
+  }
+
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.users.register(dto);
+  }
+
+  describe(repo: UsersRepository) {
+    return repo.constructor.name;
+  }
+}</code></pre>
+<pre class="code" id="code-nestjs-good" hidden><code>import { Body, Controller, Get, Post } from '@nestjs/common';
+import { UsersService } from '@app/users/users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly users: UsersService) {}
+
+  @Get()
+  list() {
+    return this.users.listActive();
+  }
+
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.users.register(dto);
+  }
+}</code></pre>
+        </div>
+
+        <div class="pane term">
+          <div class="pane-bar"><span class="dot"></span>terminal</div>
+<pre class="out" id="out-laravel-bad"><span class="mut">$</span> npx nobypass check
+
+<span class="err">✖ BND003 error</span> <span class="loc">app/Http/Controllers/UserController.php:14</span>
+  controller depends directly on service: App\Services\UserService
+  <span class="mut">expected:</span> service is reached only through controller → support → service
+  <span class="mut">fix:</span>      Call the support layer instead and let it reach service.
+
+<span class="err">✖ BND001 error</span> <span class="loc">app/Http/Controllers/UserController.php:22</span>
+  controller depends directly on model: App\Models\User
+
+<span class="err">✖ BND002 error</span> <span class="loc">app/Http/Controllers/UserController.php:22</span>
+  controller performs data access: Eloquent query User::where()
+  <span class="mut">expected:</span> Data access only in repository, reached via
+            controller → support → service → repository
+  <span class="mut">fix:</span>      Move the query into the repository layer.
+
+<span class="mut">⋮ 6 more findings in this fixture</span>
+
+9 files analyzed · 7 new errors · 2 new warnings · 0 known
+<span class="err">✖ FAIL — 7 blocking findings.</span></pre>
+<pre class="out" id="out-laravel-good" hidden><span class="mut">$</span> npx nobypass check
+
+9 files analyzed · 0 new errors · 0 new warnings · 0 known
+<span class="ok">✔ PASS — no new blocking architecture violations.</span></pre>
+<pre class="out" id="out-nestjs-bad" hidden><span class="mut">$</span> npx nobypass check
+
+<span class="err">✖ BND001 error</span> <span class="loc">src/users/users.controller.ts:2</span>
+  controller depends directly on persistence: src/prisma/prisma.service.ts
+  <span class="mut">expected:</span> controller may depend directly on: service
+
+<span class="err">✖ BND003 error</span> <span class="loc">src/users/users.controller.ts:3</span>
+  controller depends directly on repository (type-only reference)
+  <span class="mut">expected:</span> repository is reached only through
+            controller → service → repository
+
+<span class="err">✖ BND002 error</span> <span class="loc">src/users/users.controller.ts:17</span>
+  controller performs data access: Direct ORM access through
+  PrismaService (this.prisma.user.findMany)
+  <span class="mut">fix:</span>      Move the query into the repository layer.
+
+<span class="mut">⋮ 3 more findings in this fixture</span>
+
+8 files analyzed · 5 new errors · 1 new warning · 0 known
+<span class="err">✖ FAIL — 5 blocking findings.</span></pre>
+<pre class="out" id="out-nestjs-good" hidden><span class="mut">$</span> npx nobypass check
+
+8 files analyzed · 0 new errors · 0 new warnings · 0 known
+<span class="ok">✔ PASS — no new blocking architecture violations.</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section id="how" class="how wrap">
+      <div class="section-head">
+        <h2>Discover → Review → Approve → Enforce</h2>
+        <p>NoBypass never decides your architecture for you. It proposes, you approve, then it holds every change to that decision.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <span class="n">01</span>
+          <h3>Discover</h3>
+          <p><code>init</code> reads <code>composer.json</code>, PSR-4, <code>package.json</code> and <code>tsconfig</code> paths, starts from a preset and writes a <em>proposal</em>. It never treats the most common existing pattern as correct.</p>
+        </li>
+        <li>
+          <span class="n">02</span>
+          <h3>Review</h3>
+          <p><code>discovery show</code> lists the evidence: layers, coverage, ambiguous files and every place existing code contradicts the proposal.</p>
+        </li>
+        <li>
+          <span class="n">03</span>
+          <h3>Approve</h3>
+          <p><code>approve</code> is interactive only. A human signs off on <code>.nobypass.yml</code>; CI and agents can't.</p>
+        </li>
+        <li>
+          <span class="n">04</span>
+          <h3>Enforce</h3>
+          <p><code>check --since origin/main</code> fails only on violations new to the branch. Legacy debt goes into a reviewed baseline.</p>
+        </li>
+      </ol>
+
+      <div class="contract">
+        <div class="contract-copy">
+          <h3>The contract is a file you can review</h3>
+          <p>Layers are globs. <code>allowed_direct</code> lists which layer may depend on which — directly. A controller reaching the model <em>through</em> support, service and repository is fine. Importing it is not.</p>
+          <p>Unknown keys are rejected, exceptions need a written reason, and inline waivers exist only for the warning-level catch rule.</p>
+        </div>
+<pre class="code yaml"><code><span class="k">layers:</span>
+  <span class="k">controller:</span> [<span class="s">"app/Http/Controllers/**/*.php"</span>]
+  <span class="k">support:</span>    [<span class="s">"app/Support/**/*.php"</span>]
+  <span class="k">service:</span>    [<span class="s">"app/Services/**/*.php"</span>]
+  <span class="k">repository:</span> [<span class="s">"app/Repositories/**/*.php"</span>]
+  <span class="k">model:</span>      [<span class="s">"app/Models/**/*.php"</span>]
+<span class="k">dependencies:</span>
+  <span class="k">allowed_direct:</span>
+    <span class="k">controller:</span> [support]
+    <span class="k">support:</span>    [service]
+    <span class="k">service:</span>    [repository]
+    <span class="k">repository:</span> [model]
+    <span class="k">model:</span>      []
+<span class="k">rules:</span>
+  <span class="k">direct_orm_access:</span>
+    <span class="k">deny_in:</span>  [controller, support, service]
+    <span class="k">allow_in:</span> [repository]
+  <span class="k">catch_policy:</span>
+    <span class="k">discourage_in:</span> [service, repository]
+    <span class="k">severity:</span> warning</code></pre>
+      </div>
+    </section>
+
+    <!-- RULES -->
+    <section id="rules" class="rules wrap">
+      <div class="section-head">
+        <h2>Seven rules, all deterministic</h2>
+        <p>Every finding names the file, line, layers, contract edge, approved route and a concrete fix.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rule</th><th>Catches</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>BND001</code></td><td>Forbidden direct dependency between layers</td><td><span class="tag e">error</span></td></tr>
+            <tr><td><code>BND002</code></td><td>Eloquent, <code>DB::</code>, Prisma or TypeORM access outside the approved layers</td><td><span class="tag e">error</span></td></tr>
+            <tr><td><code>BND003</code></td><td>Skipping an intermediate boundary — controller → service when the route is controller → support → service</td><td><span class="tag e">error</span></td></tr>
+            <tr><td><code>BND004</code></td><td>Dependency cycle between layers</td><td><span class="tag e">error</span></td></tr>
+            <tr><td><code>EXC001</code></td><td><code>catch</code> where the contract discourages it, without a documented purpose</td><td><span class="tag w">warning</span></td></tr>
+            <tr><td><code>CFG001</code></td><td>In-scope file that matches no layer, or several</td><td><span class="tag w">warning</span></td></tr>
+            <tr><td><code>ANL001</code></td><td>File that couldn't be parsed or reference that couldn't be resolved — never a silent pass</td><td><span class="tag e">error</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CI & AGENTS -->
+    <section id="ci" class="ci wrap">
+      <div class="section-head">
+        <h2>Agents get the rules. CI gets the last word.</h2>
+        <p>An instruction file can be ignored. A required check can't. NoBypass does both.</p>
+      </div>
+      <div class="cols2">
+        <div class="card">
+          <h3><code>nobypass agents generate --skill</code></h3>
+          <p>Adds a delimited block to <code>AGENTS.md</code> (asking first if the file exists) and writes a portable <code>SKILL.md</code>. Works with any agent that reads <code>AGENTS.md</code> or Agent Skills.</p>
+<pre class="code small"><code>Before you report a task as finished:
+1. Run `npx nobypass check --since origin/main`.
+2. If it fails, fix the violations (move code to
+   the approved layer; don't work around the rule).
+
+Never edit `.nobypass.yml`, the baseline or
+`exceptions:` to make the check pass.</code></pre>
+        </div>
+        <div class="card">
+          <h3>GitHub Actions + SARIF</h3>
+          <p>Run it on every pull request, upload SARIF for inline annotations, make it a required check, and protect the contract with CODEOWNERS.</p>
+<pre class="code small"><code><span class="k">- uses:</span> actions/checkout@v4
+  <span class="k">with:</span> { fetch-depth: 0 }
+<span class="k">- run:</span> npx --yes nobypass@0.1.0 check
+    --since origin/${{ github.base_ref }}
+    --format sarif --output nobypass.sarif
+<span class="k">- uses:</span> github/codeql-action/upload-sarif@v3
+  <span class="k">if:</span> always()
+  <span class="k">with:</span> { sarif_file: nobypass.sarif }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- HONEST -->
+    <section class="honest wrap">
+      <div class="section-head">
+        <h2>What it will not claim</h2>
+        <p>NoBypass proves that <em>detectable</em> violations are absent. That is narrower than "your code is correct", on purpose.</p>
+      </div>
+      <ul class="limits">
+        <li><strong>Direct dependencies only.</strong> It doesn't prove every request walks through every layer at runtime.</li>
+        <li><strong>Untyped instance calls slip through.</strong> <code>$user-&gt;save()</code> on a value whose type isn't visible is not detected.</li>
+        <li><strong>Unknown means unknown.</strong> Dynamic calls are reported as unverified, and parse failures fail the check.</li>
+        <li><strong>Governance is yours.</strong> An agent can edit the contract locally; CODEOWNERS and branch protection are what stop it.</li>
+      </ul>
+      <p class="more"><a href="https://github.com/lexyerresta/nobypass/blob/main/docs/limitations.md">Read all known limitations →</a></p>
+    </section>
+
+    <!-- QUICKSTART -->
+    <section id="quickstart" class="quick wrap">
+      <div class="section-head">
+        <h2>Five minutes to the first check</h2>
+        <p>Node 20 or newer. Nothing else to install.</p>
+      </div>
+      <ol class="cmds">
+        <li><code>npx nobypass init</code><span>Write a proposal and a discovery report. Source files untouched.</span><button class="copy" data-copy="npx nobypass init">Copy</button></li>
+        <li><code>npx nobypass discovery show</code><span>Review layers, coverage and contradictions.</span><button class="copy" data-copy="npx nobypass discovery show">Copy</button></li>
+        <li><code>npx nobypass approve</code><span>Edit the proposal if needed, then approve it yourself.</span><button class="copy" data-copy="npx nobypass approve">Copy</button></li>
+        <li><code>npx nobypass agents generate --skill</code><span>Tell your agents about the contract.</span><button class="copy" data-copy="npx nobypass agents generate --skill">Copy</button></li>
+        <li><code>npx nobypass check --since origin/main</code><span>Fail only on what's new.</span><button class="copy" data-copy="npx nobypass check --since origin/main">Copy</button></li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <span>NoBypass · MIT licensed · v0.1</span>
+      <span>
+        <a href="https://github.com/lexyerresta/nobypass">GitHub</a>
+        <a href="https://github.com/lexyerresta/nobypass/blob/main/docs/rule-reference.md">Rule reference</a>
+        <a href="https://github.com/lexyerresta/nobypass/blob/main/docs/specification.md">Specification</a>
+      </span>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
