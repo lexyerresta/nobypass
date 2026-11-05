@@ -4,7 +4,7 @@
 
 Website: **https://nobypass.nodezio.com** · by [Nodezio](https://nodezio.com) · MIT
 
-NoBypass is a command-line checker for Laravel and NestJS projects. You write down which layer may call which: for example controller → service → repository → model. NoBypass then fails the check, locally or in CI, when code skips that path. It runs offline with static analysis. It needs no LLM, API key or account.
+NoBypass is a command-line checker for Laravel, Symfony, NestJS, Express, Fastify, Next.js, Django, FastAPI and Spring Boot projects. You write down which layer may call which: for example controller → service → repository → model. NoBypass then fails the check, locally or in CI, when code skips that path. It runs offline with static analysis. It needs no LLM, API key or account.
 
 It exists because AI coding agents (and tired humans) produce code that works but quietly ignores your architecture:
 
@@ -33,7 +33,7 @@ class UserController extends Controller
 - [What happens at each step](#what-happens-at-each-step)
 - [Everyday use](#everyday-use)
 - [The contract file](#the-contract-file)
-- [Presets: Laravel and NestJS](#presets-laravel-and-nestjs)
+- [Supported stacks and presets](#supported-stacks-and-presets)
 - [Rules](#rules)
 - [CI setup](#ci-setup)
 - [Using it with AI agents](#using-it-with-ai-agents)
@@ -45,7 +45,7 @@ class UserController extends Controller
 
 ## Quick start (5 minutes)
 
-Requirements: Node.js 20 or newer, and a Laravel or NestJS project in a git repository.
+Requirements: Node.js 20 or newer (the CLI is written in TypeScript), and a project in one of the [supported stacks](#supported-stacks-and-presets) inside a git repository.
 
 ```bash
 # 1. Install into your project (npm release coming; install from GitHub until then)
@@ -70,6 +70,8 @@ If your project already has violations, step 5 lists them. Either fix them, or r
 npx nobypass baseline create
 npx nobypass check --since origin/main   # fail only on what is new on this branch
 ```
+
+**Python, Java or PHP project without a `package.json`?** Skip step 1 and prefix every command with the GitHub package instead, for example `npx --yes github:lexyerresta/nobypass init`. Node.js is still required, but nothing is added to your project.
 
 ## What happens at each step
 
@@ -143,18 +145,37 @@ Three things to know:
 
 The full schema is in [docs/rule-reference.md](docs/rule-reference.md#contract-schema).
 
-## Presets: Laravel and NestJS
+## Supported stacks and presets
 
-`init` starts from a preset, then adapts it to the folders you actually have.
+`init` detects the framework from your manifest, starts from its preset, and adapts it to the folders you actually have. Every preset follows a widely documented public pattern.
 
-**Laravel** uses the service-repository layering: controller → service → repository → model. It is built on two public patterns, Service Layer and Repository (Martin Fowler, *Patterns of Enterprise Application Architecture*). Repository interfaces bound to Eloquent implementations in a service provider are supported, as described in the Laravel docs.
-- **Facades are understood.** A call through a custom facade (`getFacadeAccessor()` returning a class) or a real-time facade (`use Facades\App\...`) counts as a dependency on the class behind it, so a facade cannot hide a controller → repository call.
-- **Database access** means static Eloquent calls (`User::where()`, `User::create()`, …), `new Model()` and `DB::table/select/insert/…`. `DB::transaction()` is allowed anywhere.
-- **Framework glue** (requests, resources, middleware, providers, jobs, events, facades, helpers, enums, DTOs) goes in `shared`.
+| Stack | Detected from | Default layering | Pattern it follows |
+|---|---|---|---|
+| **Laravel** | `composer.json` → `laravel/framework` | controller → service → repository → model | Service Layer + Repository (Fowler, *PoEAA*); interface binding in a service provider (Laravel docs) |
+| **Symfony** | `composer.json` → `symfony/framework-bundle` | controller → service → repository → entity | Symfony best practices; Doctrine Data Mapper with repository classes |
+| **NestJS** | `package.json` → `@nestjs/core` | controller → service → repository → persistence | Nest providers; ports-and-adapters preset when `src/domain` + `src/application` or `src/infrastructure` exist |
+| **Express / Fastify** | `package.json` → `express` / `fastify` | route → controller → service → repository → model / persistence | Controller-service-repository for Node.js APIs |
+| **Next.js** | `package.json` → `next` | UI (app/, pages/, components/) → Data Access Layer → database | Next.js docs, "Data Security": use a Data Access Layer |
+| **Django** | `requirements*.txt` / `pyproject.toml` / `Pipfile` → Django | views → services / selectors → models | HackSoftware Django Styleguide |
+| **FastAPI** | same Python manifests → FastAPI | routers → services → repositories → models | Router/service/repository with SQLAlchemy sessions |
+| **Spring Boot** | `pom.xml` / `build.gradle` → `spring-boot` | controller → service → repository → entity | Spring stereotypes (`@Controller`, `@Service`, `@Repository`) and Spring Data |
 
-**NestJS**: controller → service → repository → persistence (Prisma/TypeORM clients). A ports-and-adapters preset is used automatically when `src/domain` plus `src/application` or `src/infrastructure` exist.
-- **Database access** means calls through injected `PrismaService`/`PrismaClient`, TypeORM `Repository`/`EntityManager`/`DataSource`, `@InjectRepository`/`@InjectModel`, and `new PrismaClient()`.
-- `tsconfig` path aliases are resolved. `import type` is reported as type-only.
+What counts as **database access** (rule `BND002`) in each stack:
+
+| Stack | Detected as data access |
+|---|---|
+| Laravel | Static Eloquent calls (`User::where()`, `User::create()`, …), `new Model()`, `DB::table/select/insert/…`. `DB::transaction()` is allowed anywhere. |
+| Symfony | Calls on an injected `EntityManagerInterface`, `ManagerRegistry` or DBAL `Connection` (`$this->em->persist()`, `$em->flush()`, …) |
+| NestJS, Express, Fastify, Next.js | Calls through injected or imported clients (`PrismaService`, `prisma`, `db`, `knex`, TypeORM `Repository`/`EntityManager`/`DataSource`, `@InjectRepository`/`@InjectModel`), `new PrismaClient()`, and static Mongoose/Sequelize model queries (`User.find()`, `User.findAll()`) |
+| Django | `Model.objects.…` queries and `django.db.connection` |
+| FastAPI | Calls on a `Session`/`AsyncSession`, including sessions from `Depends(get_db)` and `with Session(engine) as s` |
+| Spring Boot | Calls on an injected `EntityManager`, `JdbcTemplate`, `NamedParameterJdbcTemplate`, `JdbcClient`, `MongoTemplate`, `DSLContext`, Hibernate `Session` or MyBatis `SqlSession` |
+
+Stack-specific details:
+- **Laravel facades are understood.** A call through a custom facade (`getFacadeAccessor()` returning a class) or a real-time facade (`use Facades\App\...`) counts as a dependency on the class behind it, so a facade cannot hide a controller → repository call.
+- **TypeScript and JavaScript** (`.ts .tsx .js .jsx .mjs .cjs`, ESM and CommonJS) are analyzed. `tsconfig` path aliases are resolved, and `import type` is reported as type-only.
+- **Python**: absolute imports, relative imports and the `src/` layout are resolved. Imports inside `if TYPE_CHECKING:` are type-only.
+- **Java**: classes resolve from the standard Maven/Gradle `src/main/java` layout, including wildcard imports and same-package references.
 
 Presets are starting points. Rename layers, add or drop layers (for example a `support` layer between controller and service), and use one project entry per app in a monorepo.
 
@@ -232,7 +253,7 @@ NoBypass proves that *detectable* violations are absent, which is narrower than 
 git clone https://github.com/lexyerresta/nobypass.git
 cd nobypass
 npm install          # also builds dist/
-npm test             # 130 tests: rule cases for both adapters, fixtures, --since, discovery, CLI
+npm test             # 185 tests: rule cases for every adapter and stack, fixtures, --since, discovery, CLI
 node dist/cli/index.js check -C fixtures/laravel-violations
 ```
 
@@ -240,15 +261,18 @@ node dist/cli/index.js check -C fixtures/laravel-violations
 src/cli/                  commands
 src/core/                 contract schema, layers, rules, fingerprints, baseline, git, check, explain
 src/adapters/php/         PHP AST, PSR-4, Eloquent, DB facade, Laravel facades
-src/adapters/typescript/  TS AST, imports and path aliases, Prisma/TypeORM
+src/adapters/typescript/  TS/JS AST, imports and path aliases, Prisma/TypeORM/Drizzle/Mongoose
+src/adapters/python/      Python (tree-sitter): imports, Django ORM, SQLAlchemy sessions
+src/adapters/java/        Java (tree-sitter): imports, JPA/JDBC/jOOQ handles
 src/discovery/            project detection and proposal
 src/agents/               AGENTS.md / SKILL.md generation
-presets/                  laravel.yml, nestjs.yml, nestjs-hexagonal.yml
-fixtures/                 valid and violating sample projects for both frameworks
+presets/                  one YAML preset per stack (laravel, symfony, nestjs, node-api, nextjs, django, fastapi, spring)
+grammars/                 prebuilt tree-sitter grammars (WebAssembly, MIT); no native build needed
+fixtures/                 a valid and a violating sample project for every stack
 site/                     landing page (static, deployed on Vercel with Root Directory = site)
 ```
 
-To add a detector or rule, add a violating case and a compliant case to `test/laravel.test.ts` or `test/nestjs.test.ts` first. Adapters only produce normalized facts (dependencies, data-access operations, catch sites, unresolved references), and the rules live in `src/core/rules.ts`.
+To add a detector or rule, add a violating case and a compliant case to the matching test file first (`test/laravel.test.ts`, `test/nestjs.test.ts` or `test/stacks.test.ts`). Adapters only produce normalized facts (dependencies, data-access operations, catch sites, unresolved references), and the rules live in `src/core/rules.ts`.
 
 The landing page in `site/` was designed with the [anti-slop](https://github.com/miqdadbadjuber/anti-slop) rules by Miqdad Badjuber (MIT). Its direction is in [site/DESIGN.md](site/DESIGN.md) and its gate report in [site/DELIVERY-GATE.md](site/DELIVERY-GATE.md). It uses IBM Plex fonts (SIL OFL 1.1, see `site/fonts/OFL.txt`).
 

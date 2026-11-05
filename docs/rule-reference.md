@@ -33,6 +33,8 @@ A file in layer **A** directly depends on a file in layer **B**, and B is not in
 These count as dependencies:
 
 - **PHP:** `use` imports, constructor-injected types, `new X`, `X::method()`, `X::CONST`, `X::class`, `extends`, `implements`, traits, parameter/return/property types, `catch` types, `instanceof` and attributes. Constructor injection counts as a runtime dependency. Other type positions are *type-only*.
+- **Python:** `import x.y`, `from x import y` (a submodule when one exists, otherwise the package), relative imports and `importlib.import_module("literal")`. Imports inside `if TYPE_CHECKING:` are type-only.
+- **Java:** single-type, static and wildcard imports, plus classes from the same package referenced without an import. All Java dependencies are runtime dependencies.
 - **Laravel facades:** calling a facade also counts as depending on the class it proxies. For a custom facade, that is the class returned by `getFacadeAccessor()` (`return Foo::class;` or a class-name string). For a real-time facade, `Facades\App\Services\Foo` resolves to `App\Services\Foo`. A facade therefore cannot hide a controller → repository call.
 - **TypeScript:** `import`, `export … from`, `import x = require()`, `require()`, `import()` with a literal specifier. `import type` and all-`type` specifiers are *type-only*.
 

@@ -1,0 +1,55 @@
+# NoBypass preset: Next.js with a Data Access Layer.
+#
+# UI -> Data Access Layer -> database, as recommended by the Next.js documentation ("Data Security":
+# use a Data Access Layer for new projects). Pages, layouts, route handlers, server actions and
+# components call DAL functions; only the DAL (and the database client module) touches the database.
+#
+# The UI layer covers both app/ and pages/ routers, with or without src/.
+schema: 1
+projects:
+  - id: web
+    root: .
+    language: typescript
+    framework: nextjs
+    include:
+      - "{src/,}{app,pages,components,data,lib,db,server,actions,hooks,utils}/**/*.{ts,tsx,js,jsx}"
+      - "{src/,}middleware.{ts,js}"
+    layers:
+      ui: ["{src/,}app/**", "{src/,}pages/**", "{src/,}components/**", "{src/,}actions/**"]
+      dal: ["{src/,}data/**", "{src/,}lib/dal/**", "{src/,}server/**", "**/*.dal.{ts,tsx,js}"]
+      persistence: ["{src/,}db/**", "{src/,}lib/{db,prisma,database,drizzle}.{ts,js}", "{src/,}lib/db/**"]
+      shared:
+        - "{src/,}lib/**"
+        - "!{src/,}lib/dal/**"
+        - "!{src/,}lib/{db,prisma,database,drizzle}.{ts,js}"
+        - "!{src/,}lib/db/**"
+        - "{src/,}hooks/**"
+        - "{src/,}utils/**"
+        - "{src/,}middleware.{ts,js}"
+    dependencies:
+      allowed_direct:
+        ui: [dal]
+        dal: [persistence]
+        persistence: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: ignore
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [ui]
+        allow_in: [dal, persistence]
+        severity: error
+      catch_policy:
+        enabled: false
+        discourage_in: []
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/*.test.{ts,tsx,js,jsx}"
+      - "**/*.spec.{ts,tsx,js,jsx}"
+      - ".next/**"
+    exceptions: []
+    baseline: .nobypass/baseline.json

@@ -31,10 +31,13 @@ NoBypass claims to prevent **detectable** architecture violations. It never clai
 
 ## Language support
 
-- PHP is parsed by `php-parser` 3.x, with PHP 8 syntax enabled. Syntax the parser doesn't support produces `ANL001`.
-- TypeScript resolution uses the project's `tsconfig.json` (`paths`, `baseUrl`). Packages that are not installed are treated as external. Unresolvable *relative* and *alias* imports are `ANL001`.
-- Only Laravel and NestJS presets ship in v0.1. `framework: generic` works with hand-written contracts, but discovery won't propose one.
+- **PHP** (Laravel, Symfony) is parsed by `php-parser` 3.x, with PHP 8 syntax enabled. Syntax the parser doesn't support produces `ANL001`.
+- **TypeScript and JavaScript** (NestJS, Express, Fastify, Next.js) are parsed by the TypeScript compiler. Resolution uses the project's `tsconfig.json` (`paths`, `baseUrl`). Packages that are not installed are treated as external. Unresolvable relative and alias imports are `ANL001`.
+- **Python** (Django, FastAPI) and **Java** (Spring Boot) are parsed by tree-sitter grammars compiled to WebAssembly, which ship in `grammars/`. Any syntax error in a file produces `ANL001`; the file is never half-checked.
+  - **Python:** modules resolve from the project root and `src/`. Dynamic imports (`importlib.import_module(name)`) are unverified. Instance calls on ORM objects (`order.save()`) and sessions passed through untyped helpers are not detected.
+  - **Java:** classes resolve from `**/src/main/java`. Wildcard imports are resolved only for classes the file actually references. Kotlin, Groovy and annotation-processor-generated sources are not analyzed.
+- `framework: generic` works with hand-written contracts, but discovery won't propose one.
 
 ## Precision
 
-The curated fixtures in `test/` are the precision target: 45 violation cases and 36 compliant cases, all passing. No precision figure is claimed for arbitrary production repositories.
+The curated fixtures in `test/` are the precision target: 45 Laravel/NestJS violation cases and 36 compliant cases, 25 more violation and 15 compliant cases across Symfony, Express, Next.js, Django, FastAPI and Spring Boot, and a valid plus a violating fixture project for every stack, all passing. No precision figure is claimed for arbitrary production repositories.

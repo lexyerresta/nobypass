@@ -11,6 +11,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "grammars",
     "presets",
     "README.md",
     "LICENSE"
@@ -23,7 +24,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "prepublishOnly": "npm run build && npm test",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "grammars": "node -e \"for (const g of ['python','java']) require('fs').copyFileSync('node_modules/tree-sitter-'+g+'/tree-sitter-'+g+'.wasm','grammars/tree-sitter-'+g+'.wasm')\""
   },
   "keywords": [
     "architecture",
@@ -40,12 +42,15 @@
     "php-parser": "^3.7.0",
     "picomatch": "^4.0.7",
     "typescript": "^5.9.3",
+    "web-tree-sitter": "^0.25.10",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
     "@types/picomatch": "^3.0.2",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-python": "^0.25.0",
     "vitest": "^5.1.0"
   },
   "repository": {

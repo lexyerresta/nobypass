@@ -1,0 +1,6 @@
+{
+  "name": "nobypass-fixture-express",
+  "private": true,
+  "type": "module",
+  "dependencies": { "express": "^4.21.0", "@prisma/client": "^5.20.0" }
+}

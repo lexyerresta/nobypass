@@ -50,8 +50,10 @@ const project = z
   .object({
     id: z.string().regex(/^[A-Za-z0-9_.-]+$/),
     root: z.string().default('.'),
-    language: z.enum(['php', 'typescript']),
-    framework: z.enum(['laravel', 'nestjs', 'generic']).default('generic'),
+    language: z.enum(['php', 'typescript', 'python', 'java']),
+    framework: z
+      .enum(['laravel', 'symfony', 'nestjs', 'express', 'fastify', 'nextjs', 'django', 'fastapi', 'spring', 'generic'])
+      .default('generic'),
     include: z.array(glob).optional(),
     layers: z.record(layerName, z.array(glob).min(1)),
     dependencies: z
@@ -163,8 +165,14 @@ export function loadContractFile(file: string): Contract {
 /** Default include globs used when a project does not declare `include`. */
 export function defaultInclude(p: ProjectContract): string[] {
   if (p.include?.length) return p.include;
-  if (p.language === 'php') return p.framework === 'laravel' ? ['app/**/*.php'] : ['**/*.php'];
-  return ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.mts', 'src/**/*.cts'];
+  if (p.language === 'php') {
+    if (p.framework === 'laravel') return ['app/**/*.php'];
+    if (p.framework === 'symfony') return ['src/**/*.php'];
+    return ['**/*.php'];
+  }
+  if (p.language === 'python') return ['**/*.py'];
+  if (p.language === 'java') return ['**/src/main/java/**/*.java'];
+  return ['src/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 }
 
 /** Model layers for the ORM rule: explicit, or a layer literally named `model`/`models`. */

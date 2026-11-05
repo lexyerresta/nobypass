@@ -1,0 +1,66 @@
+# NoBypass preset: Symfony with Doctrine ORM.
+#
+# Controller -> Service -> Repository -> Entity, following the Symfony best practices (thin controllers,
+# business logic in services) and Doctrine's Data Mapper pattern: queries live in repository classes
+# (ServiceEntityRepository), entities are plain objects. Database access means calls on an injected
+# EntityManagerInterface, ManagerRegistry or DBAL Connection.
+#
+# Discovery drops layers that have no files in your repository. Review every line before approving.
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: php
+    framework: symfony
+    include:
+      - src/**/*.php
+    layers:
+      controller: ["src/Controller/**/*.php"]
+      service: ["src/Service/**/*.php"]
+      repository: ["src/Repository/**/*.php"]
+      entity: ["src/Entity/**/*.php"]
+      shared:
+        - "src/Kernel.php"
+        - "src/Form/**/*.php"
+        - "src/Dto/**/*.php"
+        - "src/DTO/**/*.php"
+        - "src/Enum/**/*.php"
+        - "src/EventSubscriber/**/*.php"
+        - "src/EventListener/**/*.php"
+        - "src/Command/**/*.php"
+        - "src/Security/**/*.php"
+        - "src/Validator/**/*.php"
+        - "src/Twig/**/*.php"
+        - "src/Message/**/*.php"
+        - "src/MessageHandler/**/*.php"
+        - "src/Serializer/**/*.php"
+        - "src/DataFixtures/**/*.php"
+    dependencies:
+      allowed_direct:
+        controller: [service]
+        service: [repository, entity]
+        repository: [entity]
+        entity: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, service]
+        allow_in: [repository]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - vendor/**
+      - tests/**
+      - migrations/**
+      - var/**
+    exceptions: []
+    baseline: .nobypass/baseline.json

@@ -1,0 +1,61 @@
+# NoBypass preset: Spring Boot (package by layer).
+#
+# Controller -> Service -> Repository -> Entity, matching Spring's own stereotypes (@Controller /
+# @RestController, @Service, @Repository) and Spring Data repositories. Controllers talk to services
+# with DTOs; only repositories reach the database. Database access means calls on an injected
+# EntityManager, JdbcTemplate, NamedParameterJdbcTemplate, JdbcClient, MongoTemplate, DSLContext
+# (jOOQ), Hibernate Session or MyBatis SqlSession.
+#
+# Layers match both the conventional package names and class-name suffixes.
+schema: 1
+projects:
+  - id: app
+    root: .
+    language: java
+    framework: spring
+    include:
+      - "**/src/main/java/**/*.java"
+    layers:
+      controller: ["**/controller/**/*.java", "**/controllers/**/*.java", "**/web/**/*.java", "**/rest/**/*.java", "**/*Controller.java", "**/*Resource.java"]
+      service: ["**/service/**/*.java", "**/services/**/*.java", "**/*Service.java", "**/*ServiceImpl.java"]
+      repository: ["**/repository/**/*.java", "**/repositories/**/*.java", "**/dao/**/*.java", "**/*Repository.java", "**/*Dao.java"]
+      entity: ["**/entity/**/*.java", "**/entities/**/*.java", "**/domain/**/*.java", "**/model/**/*.java"]
+      shared:
+        - "**/*Application.java"
+        - "**/dto/**/*.java"
+        - "**/config/**/*.java"
+        - "**/configuration/**/*.java"
+        - "**/exception/**/*.java"
+        - "**/exceptions/**/*.java"
+        - "**/mapper/**/*.java"
+        - "**/security/**/*.java"
+        - "**/util/**/*.java"
+        - "**/utils/**/*.java"
+    dependencies:
+      allowed_direct:
+        controller: [service]
+        service: [repository, entity]
+        repository: [entity]
+        entity: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, service]
+        allow_in: [repository]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/src/test/**"
+      - "**/target/**"
+      - "**/build/**"
+    exceptions: []
+    baseline: .nobypass/baseline.json

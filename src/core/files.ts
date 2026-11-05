@@ -3,7 +3,10 @@ import path from 'node:path';
 import picomatch from 'picomatch';
 
 /** Directories never walked, regardless of contract. */
-const ALWAYS_SKIP = new Set(['.git', 'node_modules', 'vendor', 'dist', 'build', '.next', 'coverage', '.nobypass']);
+const ALWAYS_SKIP = new Set([
+  '.git', 'node_modules', 'vendor', 'dist', 'build', '.next', 'coverage', '.nobypass',
+  '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache', 'target', '.gradle', '.idea',
+]);
 
 export function toPosix(p: string): string {
   return p.split(path.sep).join('/');

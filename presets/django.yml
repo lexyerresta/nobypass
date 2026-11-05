@@ -1,0 +1,66 @@
+# NoBypass preset: Django with services and selectors.
+#
+# Views/APIs -> services and selectors -> models, following the HackSoftware Django Styleguide
+# (github.com/HackSoftware/Django-Styleguide): business logic in services (writes) and selectors
+# (reads); views stay thin and do not query the ORM directly. Database access means Model.objects
+# queries and django.db.connection.
+schema: 1
+projects:
+  - id: web
+    root: .
+    language: python
+    framework: django
+    include:
+      - "**/*.py"
+    layers:
+      view: ["**/views.py", "**/views/**/*.py", "**/apis.py", "**/apis/**/*.py", "**/viewsets.py", "**/api.py"]
+      service: ["**/services.py", "**/services/**/*.py", "**/selectors.py", "**/selectors/**/*.py"]
+      model: ["**/models.py", "**/models/**/*.py", "**/managers.py", "**/querysets.py"]
+      shared:
+        - "manage.py"
+        - "**/urls.py"
+        - "**/admin.py"
+        - "**/apps.py"
+        - "**/forms.py"
+        - "**/serializers.py"
+        - "**/serializers/**/*.py"
+        - "**/permissions.py"
+        - "**/signals.py"
+        - "**/tasks.py"
+        - "**/middleware.py"
+        - "**/settings.py"
+        - "**/settings/**/*.py"
+        - "**/wsgi.py"
+        - "**/asgi.py"
+        - "**/utils.py"
+        - "**/utils/**/*.py"
+    dependencies:
+      allowed_direct:
+        view: [service]
+        service: [model]
+        model: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: ignore
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [view]
+        allow_in: [service, model]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/migrations/**"
+      - "**/tests/**"
+      - "**/tests.py"
+      - "**/test_*.py"
+      - "**/conftest.py"
+      - "**/__init__.py"
+    exceptions: []
+    baseline: .nobypass/baseline.json

@@ -1,0 +1,69 @@
+# NoBypass preset: Node.js HTTP API (Express or Fastify).
+#
+# Route -> Controller -> Service -> Repository -> Model / persistence: the controller-service-repository
+# layering widely used for Node.js APIs. Routes wire URLs to controllers, controllers handle HTTP,
+# services hold business rules, and repositories are the only place that talks to the database
+# (Prisma, TypeORM, Drizzle, Knex, Mongoose, Sequelize).
+#
+# Discovery drops layers that have no files in your repository and re-wires the chain around them.
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: typescript
+    framework: express
+    include:
+      - "src/**/*.{ts,tsx,js,mjs,cjs}"
+      - "{routes,routers,controllers,services,repositories,models,entities,db,database,prisma,lib,middleware,middlewares,plugins,config,utils,types,schemas,validators,dto,errors}/**/*.{ts,js,mjs,cjs}"
+      - "{app,server,index,main}.{ts,js,mjs,cjs}"
+    layers:
+      route: ["**/routes/**", "**/routers/**", "**/*.routes.{ts,js}", "**/*.router.{ts,js}"]
+      controller: ["**/controllers/**", "**/*.controller.{ts,js}"]
+      service: ["**/services/**", "**/*.service.{ts,js}"]
+      repository: ["**/repositories/**", "**/*.repository.{ts,js}"]
+      model: ["**/models/**", "**/*.model.{ts,js}", "**/entities/**", "**/*.entity.{ts,js}"]
+      persistence: ["**/db/**", "**/database/**", "**/prisma/**", "**/lib/{db,prisma,database}.{ts,js}"]
+      shared:
+        - "{src/,}{app,server,index,main}.{ts,js,mjs,cjs}"
+        - "**/middleware/**"
+        - "**/middlewares/**"
+        - "**/plugins/**"
+        - "**/config/**"
+        - "**/utils/**"
+        - "**/types/**"
+        - "**/schemas/**"
+        - "**/validators/**"
+        - "**/dto/**"
+        - "**/errors/**"
+    dependencies:
+      allowed_direct:
+        route: [controller]
+        controller: [service]
+        service: [repository]
+        repository: [model, persistence]
+        model: [persistence]
+        persistence: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [route, controller, service]
+        allow_in: [repository, persistence, model]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/*.test.{ts,js}"
+      - "**/*.spec.{ts,js}"
+      - "test/**"
+      - "tests/**"
+      - "__tests__/**"
+    exceptions: []
+    baseline: .nobypass/baseline.json

@@ -7,7 +7,19 @@ import { analyzeProject, inScopeFiles } from '../core/engine.js';
 import { compileGlobs, toPosix } from '../core/files.js';
 import { LayerMap } from '../core/layers.js';
 
-export type PresetName = 'laravel' | 'nestjs' | 'nestjs-hexagonal';
+export type PresetName = 'laravel' | 'symfony' | 'nestjs' | 'nestjs-hexagonal' | 'node-api' | 'nextjs' | 'django' | 'fastapi' | 'spring';
+
+const PRESET_FOR: Record<Framework, PresetName> = {
+  laravel: 'laravel',
+  symfony: 'symfony',
+  nestjs: 'nestjs',
+  express: 'node-api',
+  fastify: 'node-api',
+  nextjs: 'nextjs',
+  django: 'django',
+  fastapi: 'fastapi',
+  spring: 'spring',
+};
 
 export interface LayerStat {
   name: string;
@@ -61,35 +73,65 @@ function readJson(file: string): any {
   }
 }
 
+export type Framework = 'laravel' | 'symfony' | 'nestjs' | 'express' | 'fastify' | 'nextjs' | 'django' | 'fastapi' | 'spring';
+
 interface Detection {
-  framework: 'laravel' | 'nestjs';
+  framework: Framework;
   evidence: string[];
 }
 
-function detect(dir: string): { detections: Detection[]; } {
+const ORM_PACKAGES = ['@prisma/client', 'typeorm', 'mongoose', 'drizzle-orm', 'sequelize', 'knex'];
+
+function readText(file: string): string | null {
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+/** One detection per manifest; the most specific framework in a manifest wins (NestJS over Express, Laravel over Symfony parts). */
+function detect(dir: string): { detections: Detection[] } {
   const detections: Detection[] = [];
   const composer = readJson(path.join(dir, 'composer.json'));
   if (composer) {
     const deps = { ...(composer.require ?? {}), ...(composer['require-dev'] ?? {}) };
+    const psr4 = Object.entries(composer.autoload?.['psr-4'] ?? {}).map(([ns, d]) => `PSR-4: ${ns} → ${JSON.stringify(d)}`);
+    const php = composer.require?.php ? [`composer.json requires php ${composer.require.php}`] : [];
     if (deps['laravel/framework']) {
-      const ev = [`composer.json requires laravel/framework ${deps['laravel/framework']}`];
-      if (composer.require?.php) ev.push(`composer.json requires php ${composer.require.php}`);
-      const psr4 = composer.autoload?.['psr-4'] ?? {};
-      for (const [ns, d] of Object.entries(psr4)) ev.push(`PSR-4: ${ns} → ${JSON.stringify(d)}`);
-      detections.push({ framework: 'laravel', evidence: ev });
+      detections.push({ framework: 'laravel', evidence: [`composer.json requires laravel/framework ${deps['laravel/framework']}`, ...php, ...psr4] });
+    } else if (deps['symfony/framework-bundle']) {
+      const ev = [`composer.json requires symfony/framework-bundle ${deps['symfony/framework-bundle']}`, ...php, ...psr4];
+      if (deps['doctrine/orm'] || deps['doctrine/doctrine-bundle']) ev.push('Doctrine ORM present');
+      detections.push({ framework: 'symfony', evidence: ev });
     }
   }
   const pkg = readJson(path.join(dir, 'package.json'));
   if (pkg) {
     const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
-    if (deps['@nestjs/core']) {
-      const ev = [`package.json depends on @nestjs/core ${deps['@nestjs/core']}`];
-      if (deps.typescript) ev.push(`typescript ${deps.typescript}`);
-      if (fs.existsSync(path.join(dir, 'tsconfig.json'))) ev.push('tsconfig.json present');
-      for (const orm of ['@prisma/client', 'typeorm', 'mongoose', 'drizzle-orm', 'sequelize']) {
-        if (deps[orm]) ev.push(`ORM: ${orm} ${deps[orm]}`);
-      }
-      detections.push({ framework: 'nestjs', evidence: ev });
+    const extra = [
+      ...(deps.typescript ? [`typescript ${deps.typescript}`] : []),
+      ...(fs.existsSync(path.join(dir, 'tsconfig.json')) ? ['tsconfig.json present'] : []),
+      ...ORM_PACKAGES.filter((o) => deps[o]).map((o) => `ORM: ${o} ${deps[o]}`),
+    ];
+    const order: Array<[string, Framework]> = [['@nestjs/core', 'nestjs'], ['next', 'nextjs'], ['fastify', 'fastify'], ['express', 'express']];
+    const hit = order.find(([dep]) => deps[dep]);
+    if (hit) detections.push({ framework: hit[1], evidence: [`package.json depends on ${hit[0]} ${deps[hit[0]]}`, ...extra] });
+  }
+  const pyManifests = ['pyproject.toml', 'requirements.txt', 'requirements/base.txt', 'requirements/production.txt', 'Pipfile', 'setup.cfg', 'setup.py'];
+  const py = pyManifests.map((m) => [m, readText(path.join(dir, m))] as const).filter(([, t]) => t);
+  if (py.length) {
+    const has = (re: RegExp) => py.find(([, t]) => re.test(t!));
+    const django = has(/^\s*["']?django\b|["']django[<>=~! \]"']|\bDjango\b/im);
+    const fastapi = has(/^\s*["']?fastapi\b|["']fastapi[<>=~! \]"']/im);
+    if (django) detections.push({ framework: 'django', evidence: [`${django[0]} lists Django`, ...(fs.existsSync(path.join(dir, 'manage.py')) ? ['manage.py present'] : [])] });
+    if (fastapi) detections.push({ framework: 'fastapi', evidence: [`${fastapi[0]} lists FastAPI`] });
+  }
+  for (const m of ['pom.xml', 'build.gradle', 'build.gradle.kts']) {
+    const text = readText(path.join(dir, m));
+    if (text && /spring-boot/.test(text)) {
+      detections.push({ framework: 'spring', evidence: [`${m} uses Spring Boot`, ...(fs.existsSync(path.join(dir, 'src', 'main', 'java')) ? ['src/main/java present'] : [])] });
+      break;
     }
   }
   return { detections };
@@ -150,15 +192,14 @@ function removeLayer(p: ProjectContract, name: string, notes: string[]) {
 }
 
 const SUFFIX_HINTS: Array<[RegExp, string]> = [
-  [/Controller\.php$|\.controller\.ts$/, 'controller'],
-  [/Service\.php$|\.service\.ts$/, 'service'],
-  [/Repository\.php$|\.repository\.ts$/, 'repository'],
-  [/Support\.php$/, 'support'],
+  [/Controller\.(php|java)$|\.controller\.(ts|js)$/, 'controller'],
+  [/Service(Impl)?\.(php|java)$|\.service\.(ts|js)$|(^|\/)services?\.py$/, 'service'],
+  [/Repository\.(php|java)$|\.repository\.(ts|js)$/, 'repository'],
 ];
 
 function proposeProject(repoRoot: string, dir: string, det: Detection, usedIds: Set<string>): ProposedProject {
   const notes: string[] = [];
-  let preset: PresetName = det.framework === 'laravel' ? 'laravel' : 'nestjs';
+  let preset: PresetName = PRESET_FOR[det.framework];
   if (
     det.framework === 'nestjs' &&
     fs.existsSync(path.join(dir, 'src', 'domain')) &&
@@ -168,6 +209,7 @@ function proposeProject(repoRoot: string, dir: string, det: Detection, usedIds: 
     notes.push('src/domain + src/application|infrastructure found: proposing the ports & adapters preset.');
   }
   const project: ProjectContract = structuredClone(loadPreset(preset));
+  project.framework = det.framework;
   const rel = toPosix(path.relative(repoRoot, dir)) || '.';
   project.root = rel;
   let id = rel === '.' ? 'api' : path.basename(dir).toLowerCase().replace(/[^a-z0-9_.-]/g, '-');
@@ -191,7 +233,7 @@ function proposeProject(repoRoot: string, dir: string, det: Detection, usedIds: 
       notes.push(`${file} extends an Eloquent model outside app/Models: added to the model layer.`);
     }
   }
-  if (det.framework === 'nestjs' && project.layers.persistence) {
+  if (['nestjs', 'express', 'fastify'].includes(det.framework) && project.layers.persistence) {
     for (const file of files) {
       const content = fs.readFileSync(path.join(dir, file), 'utf8');
       if (/extends\s+PrismaClient\b/.test(content) && layerMap.assign(file).layer !== 'persistence') {

@@ -42,6 +42,18 @@ export const DEFAULT_ORM_CLIENTS = [
   'Knex',
 ];
 
+/** Layer names whose exports are database clients (`export const db = drizzle(...)`, `export const prisma = new PrismaClient()`). */
+const PERSISTENCE_LAYERS = new Set(['persistence', 'db', 'database']);
+/** Conventional names for imported database clients. */
+const CLIENT_NAMES = /^(prisma|db|knex|sequelize|pool|sql|drizzle|mongoose|dataSource|AppDataSource)$/;
+/** Static model methods (Mongoose, Sequelize, Objection) that query the database. */
+const MODEL_STATIC_OPS = new Set([
+  'find', 'findOne', 'findById', 'findAll', 'findByPk', 'findAndCountAll', 'findOrCreate', 'create', 'insertMany',
+  'bulkCreate', 'updateOne', 'updateMany', 'update', 'deleteOne', 'deleteMany', 'destroy', 'upsert', 'aggregate',
+  'countDocuments', 'count', 'exists', 'findOneAndUpdate', 'findOneAndDelete', 'findByIdAndUpdate', 'findByIdAndDelete',
+  'query', 'where', 'distinct',
+]);
+
 /** Decorators that inject ORM handles regardless of the declared type. */
 const ORM_INJECT_DECORATORS = new Set([
   'InjectRepository',
@@ -141,7 +153,13 @@ export const typescriptAdapter: Adapter = {
         content,
         ts.ScriptTarget.Latest,
         true,
-        file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+        /\.tsx$/.test(file)
+          ? ts.ScriptKind.TSX
+          : /\.jsx$/.test(file)
+            ? ts.ScriptKind.JSX
+            : /\.[mc]?js$/.test(file)
+              ? ts.ScriptKind.JS
+              : ts.ScriptKind.TS,
       );
 
     // Project classes extending an ORM client (e.g. `class PrismaService extends PrismaClient`) are clients too.
@@ -230,6 +248,8 @@ export const typescriptAdapter: Adapter = {
 
         // Names (this.x or local x) bound to ORM clients in this file.
         const clientNames = new Map<string, string>();
+        // Imported model classes (Mongoose / Sequelize style): static query methods are data access.
+        const modelNames = new Map<string, string>();
 
         const visit = (node: ts.Node) => {
           if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
@@ -240,6 +260,21 @@ export const typescriptAdapter: Adapter = {
               !!clause?.isTypeOnly ||
               (!!clause && !clause.name && named.length > 0 && named.every((e) => e.isTypeOnly));
             addImport(spec, node, typeOnly);
+            if (!typeOnly && clause) {
+              const locals = [
+                ...(clause.name ? [clause.name.text] : []),
+                ...named.filter((e) => !e.isTypeOnly).map((e) => e.name.text),
+                ...(clause.namedBindings && ts.isNamespaceImport(clause.namedBindings) ? [clause.namedBindings.name.text] : []),
+              ];
+              const res = resolve(spec, file);
+              if (res?.file && !res.external) {
+                const layer = ctx.layerOf(res.file);
+                for (const local of locals) {
+                  if (ctx.isModelLayerFile(res.file)) modelNames.set(local, `${local} from ${spec}`);
+                  else if ((layer && PERSISTENCE_LAYERS.has(layer)) || CLIENT_NAMES.test(local)) clientNames.set(local, `${local} from ${spec}`);
+                }
+              }
+            }
             if (!typeOnly && ormPackages.has(packageOf(spec))) {
               for (const el of named) {
                 const imported = (el.propertyName ?? el.name).text;
@@ -301,7 +336,7 @@ export const typescriptAdapter: Adapter = {
         visit(sf);
 
         // Second pass: calls rooted at a client binding are data access.
-        if (clientNames.size) {
+        if (clientNames.size || modelNames.size) {
           const visitCalls = (node: ts.Node) => {
             const callee = ts.isCallExpression(node)
               ? node.expression
@@ -321,6 +356,22 @@ export const typescriptAdapter: Adapter = {
                   confidence: 'high',
                 });
                 return; // don't double-count inner calls of the same chain
+              }
+              if (
+                ts.isPropertyAccessExpression(callee) &&
+                ts.isIdentifier(callee.expression) &&
+                modelNames.has(callee.expression.text) &&
+                MODEL_STATIC_OPS.has(callee.name.text)
+              ) {
+                const text = `${callee.expression.text}.${callee.name.text}`;
+                result.operations.push({
+                  symbol: text,
+                  line: lineOf(sf, node),
+                  evidence: `Model query ${text}() on ${modelNames.get(callee.expression.text)}`,
+                  target: null,
+                  confidence: 'high',
+                });
+                return;
               }
             }
             ts.forEachChild(node, visitCalls);

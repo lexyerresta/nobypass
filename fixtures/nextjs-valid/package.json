@@ -1,0 +1,5 @@
+{
+  "name": "nobypass-fixture-nextjs",
+  "private": true,
+  "dependencies": { "next": "^15.0.0", "react": "^19.0.0", "@prisma/client": "^5.20.0", "server-only": "^0.0.1" }
+}

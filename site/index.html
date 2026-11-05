@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NoBypass: architecture contracts for AI-written code</title>
-  <meta name="description" content="Your AI said it followed your architecture. Check. NoBypass is an open-source, offline CLI that fails the pull request when Laravel or NestJS code skips the layers your team approved.">
+  <meta name="description" content="Your AI said it followed your architecture. Check. NoBypass is an open-source, offline CLI that fails the pull request when Laravel, Symfony, NestJS, Express, Next.js, Django, FastAPI or Spring Boot code skips the layers your team approved.">
   <meta property="og:title" content="NoBypass: your AI said it followed your architecture. Check.">
-  <meta property="og:description" content="Open-source, offline architecture contract checker for Laravel and NestJS. No LLM, no API key, no account.">
+  <meta property="og:description" content="Open-source, offline architecture contract checker for PHP, TypeScript/JavaScript, Python and Java projects. No LLM, no API key, no account.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://nobypass.nodezio.com/">
   <link rel="canonical" href="https://nobypass.nodezio.com/">
@@ -52,7 +52,7 @@
           <a class="btn btn-primary" href="#start">Run it on your repo</a>
           <a class="btn" href="https://github.com/lexyerresta/nobypass">Read the source on GitHub</a>
         </div>
-        <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account.</p>
+        <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account. PHP, TypeScript/JavaScript, Python and Java.</p>
       </div>
 
       <figure class="diagram">
@@ -303,7 +303,7 @@ that reaches the repository from another controller</span>
           </thead>
           <tbody>
             <tr><td><code>BND001</code></td><td>A direct dependency the contract does not allow</td><td><span class="sev sev-e">error</span></td></tr>
-            <tr><td><code>BND002</code></td><td>Eloquent, <code>DB::</code>, Prisma or TypeORM access outside the approved layers</td><td><span class="sev sev-e">error</span></td></tr>
+            <tr><td><code>BND002</code></td><td>Database access outside the approved layers: Eloquent, Doctrine, Prisma, TypeORM, Mongoose, Django ORM, SQLAlchemy, JPA or JDBC</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>BND003</code></td><td>Skipping one layer, such as controller to repository when the route is controller, service, repository</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>BND004</code></td><td>A dependency cycle between layers</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>EXC001</code></td><td>A <code>catch</code> where the contract discourages it, without a documented purpose</td><td><span class="sev sev-w">warning</span></td></tr>
@@ -314,11 +314,35 @@ that reaches the repository from another controller</span>
       </div>
     </section>
 
+    <section id="stacks" class="stacks wrap" aria-labelledby="stacks-title">
+      <div class="head">
+        <h2 id="stacks-title">Nine stacks, one contract format</h2>
+        <p><code>nobypass init</code> detects the framework from your manifest and starts from a preset built on a documented public pattern. Every preset is a plain YAML file you can edit before approving.</p>
+      </div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Supported stacks">
+        <table>
+          <thead>
+            <tr><th scope="col">Stack</th><th scope="col">Default layering</th><th scope="col">Pattern it follows</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Laravel</td><td class="mono">controller → service → repository → model</td><td>Service Layer and Repository (Fowler, PoEAA). Facades are resolved to the class behind them.</td></tr>
+            <tr><td>Symfony</td><td class="mono">controller → service → repository → entity</td><td>Symfony best practices, Doctrine repositories</td></tr>
+            <tr><td>NestJS</td><td class="mono">controller → service → repository → persistence</td><td>Nest providers, optional ports and adapters</td></tr>
+            <tr><td>Express, Fastify</td><td class="mono">route → controller → service → repository</td><td>Controller, service, repository for Node.js APIs</td></tr>
+            <tr><td>Next.js</td><td class="mono">UI → data access layer → database</td><td>Next.js docs, Data Security: Data Access Layer</td></tr>
+            <tr><td>Django</td><td class="mono">views → services / selectors → models</td><td>HackSoftware Django Styleguide</td></tr>
+            <tr><td>FastAPI</td><td class="mono">routers → services → repositories → models</td><td>Router, service, repository with SQLAlchemy sessions</td></tr>
+            <tr><td>Spring Boot</td><td class="mono">controller → service → repository → entity</td><td>Spring stereotypes and Spring Data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <section id="start" class="start" aria-labelledby="start-title">
       <div class="wrap">
         <div class="head">
           <h2 id="start-title">From an existing repository to a required check</h2>
-          <p>Node 20 or newer. Run these in the root of a Laravel or NestJS project. Until the npm release, install from GitHub; every <code>npx nobypass</code> command then runs the installed copy.</p>
+          <p>Node 20 or newer. Run these in the root of a Laravel, Symfony, NestJS, Express, Fastify, Next.js, Django, FastAPI or Spring Boot project. Until the npm release, install from GitHub; every <code>npx nobypass</code> command then runs the installed copy.</p>
         </div>
 
         <ol class="cmds">

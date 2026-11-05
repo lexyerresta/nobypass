@@ -1,0 +1,62 @@
+# NoBypass preset: FastAPI with SQLAlchemy or SQLModel.
+#
+# Routers -> services -> repositories -> models: the router/service/repository layering common in
+# FastAPI applications. Routers receive the request (and the session via Depends), services hold
+# business rules, repositories (or crud modules) are the only place that queries the session.
+# Database access means calls on a Session/AsyncSession, including sessions injected with
+# Depends(get_db).
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: python
+    framework: fastapi
+    include:
+      - "**/*.py"
+    layers:
+      router: ["**/routers/**/*.py", "**/routes/**/*.py", "**/endpoints/**/*.py", "**/api/**/*.py"]
+      service: ["**/services/**/*.py", "**/service/**/*.py", "**/services.py"]
+      repository: ["**/repositories/**/*.py", "**/repository/**/*.py", "**/crud/**/*.py", "**/crud.py"]
+      model: ["**/models/**/*.py", "**/models.py"]
+      shared:
+        - "**/main.py"
+        - "**/schemas/**/*.py"
+        - "**/schemas.py"
+        - "**/core/**/*.py"
+        - "**/config.py"
+        - "**/settings.py"
+        - "**/deps.py"
+        - "**/dependencies.py"
+        - "**/db/**/*.py"
+        - "**/database.py"
+        - "**/utils/**/*.py"
+    dependencies:
+      allowed_direct:
+        router: [service]
+        service: [repository]
+        repository: [model]
+        model: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: ignore
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [router, service]
+        allow_in: [repository]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/tests/**"
+      - "**/test_*.py"
+      - "**/conftest.py"
+      - "**/alembic/**"
+      - "**/__init__.py"
+    exceptions: []
+    baseline: .nobypass/baseline.json

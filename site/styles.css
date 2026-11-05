@@ -309,3 +309,8 @@ td:nth-child(2) { color: var(--ink-2); min-width: 16em; }
 
 /* MOTION 1: nothing animates. Kept explicit for anyone adding motion later. */
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Stacks: a second table with the layer path in mono, matching the identity motif. */
+.stacks { padding: 0 0 88px; }
+td.mono { font: 400 14px var(--mono); color: var(--ink); white-space: nowrap; }
+@media (max-width: 720px) { td.mono { white-space: normal; } }

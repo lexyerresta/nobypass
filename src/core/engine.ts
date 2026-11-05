@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { phpAdapter } from '../adapters/php/index.js';
 import { typescriptAdapter } from '../adapters/typescript/index.js';
+import { pythonAdapter } from '../adapters/python/index.js';
+import { javaAdapter } from '../adapters/java/index.js';
 import type { Adapter, PreparedAdapter } from '../adapters/types.js';
 import { defaultInclude, modelLayers, type ProjectContract } from './config.js';
 import { compileGlobs, walkFiles } from './files.js';
@@ -12,16 +14,22 @@ import type { FileAnalysis, Finding, Language } from './types.js';
 export const ADAPTERS: Record<Language, Adapter> = {
   php: phpAdapter,
   typescript: typescriptAdapter,
+  python: pythonAdapter,
+  java: javaAdapter,
 };
 
 const EXTENSIONS: Record<Language, RegExp> = {
   php: /\.php$/,
-  typescript: /\.(ts|tsx|mts|cts)$/,
+  typescript: /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/,
+  python: /\.py$/,
+  java: /\.java$/,
 };
 
 const ALWAYS_EXCLUDE: Record<Language, string[]> = {
   php: ['vendor/**', '**/*.blade.php'],
-  typescript: ['node_modules/**', '**/*.d.ts', 'dist/**'],
+  typescript: ['node_modules/**', '**/*.d.ts', 'dist/**', '**/*.min.js', '.next/**', 'out/**'],
+  python: ['**/.venv/**', '**/venv/**', '**/__pycache__/**', '**/site-packages/**'],
+  java: ['**/target/**', '**/build/**', '**/src/test/**'],
 };
 
 export interface ProjectRun {

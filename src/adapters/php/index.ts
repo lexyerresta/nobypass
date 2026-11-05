@@ -24,6 +24,15 @@ const MODEL_BASES = new Set([
 
 const DB_FACADES = new Set(['illuminate\\support\\facades\\db', 'db']);
 
+/** Doctrine (Symfony) types whose method calls are direct database access. Lowercased FQCNs. */
+const DOCTRINE_HANDLES = new Set([
+  'doctrine\\orm\\entitymanagerinterface',
+  'doctrine\\orm\\entitymanager',
+  'doctrine\\persistence\\objectmanager',
+  'doctrine\\persistence\\managerregistry',
+  'doctrine\\dbal\\connection',
+]);
+
 /** DB facade calls that read or write data. Transaction boundaries are deliberately excluded. */
 const DB_DATA_METHODS = new Set([
   'table', 'select', 'selectone', 'scalar', 'insert', 'update', 'delete', 'statement', 'unprepared',
@@ -349,8 +358,35 @@ export const phpAdapter: Adapter = {
             }
           }
 
+          // Doctrine handles (Symfony): parameters and properties typed with an entity manager or DBAL connection.
+          const doctrineHandles = new Map<string, string>();
+          walk(children, (n) => {
+            if ((n.kind === 'parameter' || n.kind === 'property') && n.type?.kind === 'name' && n.name?.name) {
+              const fqcn = resolveName(n.type, scope);
+              if (fqcn && DOCTRINE_HANDLES.has(fqcn.toLowerCase())) doctrineHandles.set(n.name.name, fqcn.split('\\').pop()!);
+            }
+          });
+
           walk(children, (n, parent, key, inType) => {
             if (n.kind === 'usegroup') return false;
+
+            // $this->em->persist(...) or $em->flush() on a Doctrine handle is direct database access.
+            if (n.kind === 'call' && n.what?.kind === 'propertylookup' && doctrineHandles.size) {
+              const target = n.what.what;
+              const method = n.what.offset?.kind === 'identifier' ? n.what.offset.name : '?';
+              let handle: string | null = null;
+              if (target?.kind === 'variable' && target.name !== 'this') handle = target.name;
+              else if (target?.kind === 'propertylookup' && target.what?.kind === 'variable' && target.what.name === 'this' && target.offset?.kind === 'identifier') handle = target.offset.name;
+              if (handle && doctrineHandles.has(handle)) {
+                result.operations.push({
+                  symbol: `${doctrineHandles.get(handle)}->${method}`,
+                  line: lineOf(n),
+                  evidence: `Doctrine access through ${doctrineHandles.get(handle)} ($${handle}->${method}())`,
+                  target: null,
+                  confidence: 'high',
+                });
+              }
+            }
 
             // Constructor-injected types are resolved by the container at runtime.
             if (n.kind === 'method' && n.name?.name?.toLowerCase() === '__construct') {

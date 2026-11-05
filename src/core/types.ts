@@ -15,7 +15,7 @@ export type RuleId =
 
 export type Severity = 'error' | 'warning';
 export type Confidence = 'high' | 'medium' | 'low';
-export type Language = 'php' | 'typescript';
+export type Language = 'php' | 'typescript' | 'python' | 'java';
 
 /** How a dependency is used. `type` = only in type positions (hints, `import type`). */
 export type DependencyKind = 'runtime' | 'type';
