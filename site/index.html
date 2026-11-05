@@ -56,24 +56,23 @@
       </div>
 
       <figure class="diagram">
-        <svg viewBox="0 0 340 300" role="img" aria-labelledby="diagram-title diagram-desc">
+        <svg viewBox="0 0 340 240" role="img" aria-labelledby="diagram-title diagram-desc">
           <title id="diagram-title">Approved layer path and a blocked bypass</title>
-          <desc id="diagram-desc">Five stacked layers, controller, support, service, repository and model, connected top to bottom. A red line goes straight from controller to model, skipping three layers, and is marked BND002 blocked.</desc>
+          <desc id="diagram-desc">Four stacked layers, controller, service, repository and model, connected top to bottom. A red line goes straight from controller to model, skipping two layers, and is marked BND002 blocked.</desc>
           <g class="d-layer"><rect x="10" y="8" width="210" height="40" rx="4"/><text x="26" y="33">controller</text></g>
-          <g class="d-layer"><rect x="10" y="68" width="210" height="40" rx="4"/><text x="26" y="93">support</text></g>
-          <g class="d-layer"><rect x="10" y="128" width="210" height="40" rx="4"/><text x="26" y="153">service</text></g>
-          <g class="d-layer"><rect x="10" y="188" width="210" height="40" rx="4"/><text x="26" y="213">repository</text></g>
-          <g class="d-layer d-model"><rect x="10" y="248" width="210" height="40" rx="4"/><text x="26" y="273">model</text></g>
-          <path class="d-edge" d="M115 48v20M115 108v20M115 168v20M115 228v20"/>
-          <path class="d-bypass" d="M220 28h52v240h-52"/>
-          <path class="d-tick" d="M228 262l-8 6 8 6"/>
+          <g class="d-layer"><rect x="10" y="68" width="210" height="40" rx="4"/><text x="26" y="93">service</text></g>
+          <g class="d-layer"><rect x="10" y="128" width="210" height="40" rx="4"/><text x="26" y="153">repository</text></g>
+          <g class="d-layer d-model"><rect x="10" y="188" width="210" height="40" rx="4"/><text x="26" y="213">model</text></g>
+          <path class="d-edge" d="M115 48v20M115 108v20M115 168v20"/>
+          <path class="d-bypass" d="M220 28h52v180h-52"/>
+          <path class="d-tick" d="M228 202l-8 6 8 6"/>
           <g class="d-stamp">
-            <rect x="236" y="128" width="98" height="40" rx="4"/>
-            <text x="285" y="145" text-anchor="middle">BND002</text>
-            <text x="285" y="160" text-anchor="middle" class="d-small">blocked</text>
+            <rect x="236" y="98" width="98" height="40" rx="4"/>
+            <text x="285" y="115" text-anchor="middle">BND002</text>
+            <text x="285" y="130" text-anchor="middle" class="d-small">blocked</text>
           </g>
         </svg>
-        <figcaption><code>User::where()</code> in a controller returns the right data. It also skips three approved layers.</figcaption>
+        <figcaption><code>User::where()</code> in a controller returns the right data. It also skips two approved layers.</figcaption>
       </figure>
     </section>
 
@@ -110,16 +109,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
-use App\Repositories\UserRepository;
-use App\Services\UserService;
+use App\Repositories\Contracts\UserRepository;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(
-        private readonly UserService $service,
-        private readonly UserRepository $repository,
-    ) {
+    public function __construct(private readonly UserRepository $users)
+    {
     }
 
     public function index(): JsonResponse
@@ -132,7 +128,7 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        return response()-&gt;json($this-&gt;service-&gt;register($request-&gt;validated()), 201);
+        return response()-&gt;json($this-&gt;users-&gt;create($request-&gt;validated()), 201);
     }
 }</code></pre>
 <pre class="code" id="code-laravel-good" tabindex="0" hidden><code>&lt;?php
@@ -140,12 +136,12 @@ class UserController extends Controller
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
-use App\Support\UserSupport;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserSupport $users)
+    public function __construct(private readonly UserService $users)
     {
     }
 
@@ -209,29 +205,31 @@ export class UsersController {
 
         <div class="pane pane-report" aria-live="polite">
           <p class="pane-label">Output of <code>nobypass check</code> <span class="abridged">(abridged)</span></p>
-<pre class="report" id="out-laravel-bad" tabindex="0"><span class="r-err">✖ BND003 error</span>  <span class="r-loc">UserController.php:14</span>
-  controller depends directly on service:
-  App\Services\UserService
-  <span class="r-dim">expected:</span> service is reached only through
-            controller → support → service
+<pre class="report" id="out-laravel-bad" tabindex="0"><span class="r-err">✖ BND003 error</span>  <span class="r-loc">UserController.php:12</span>
+  controller depends directly on repository:
+  App\Repositories\Contracts\UserRepository
+  <span class="r-dim">expected:</span> repository is reached only through
+            controller → service → repository
 
-<span class="r-err">✖ BND001 error</span>  <span class="r-loc">UserController.php:22</span>
+<span class="r-err">✖ BND001 error</span>  <span class="r-loc">UserController.php:19</span>
   controller depends directly on model:
   App\Models\User
 
-<span class="r-err">✖ BND002 error</span>  <span class="r-loc">UserController.php:22</span>
+<span class="r-err">✖ BND002 error</span>  <span class="r-loc">UserController.php:19</span>
   controller performs data access:
   Eloquent query User::where()
   <span class="r-dim">expected:</span> data access only in repository,
-            reached via controller → support
-            → service → repository
+            reached via controller → service
+            → repository
   <span class="r-dim">fix:</span>      move the query into the repository layer
 
-<span class="r-dim">6 more findings in this fixture</span>
+<span class="r-dim">6 more findings in this fixture, including a
+real-time facade (Facades\App\Repositories\...)
+that reaches the repository from another controller</span>
 
-9 files analyzed · 7 new errors · 2 new warnings
+11 files analyzed · 7 new errors · 2 new warnings
 <span class="r-err">✖ FAIL: 7 blocking findings</span></pre>
-<pre class="report" id="out-laravel-good" tabindex="0" hidden>9 files analyzed · 0 new errors · 0 new warnings
+<pre class="report" id="out-laravel-good" tabindex="0" hidden>11 files analyzed · 0 new errors · 0 new warnings
 
 <span class="r-ok">✔ PASS: no new blocking architecture violations</span></pre>
 <pre class="report" id="out-nestjs-bad" tabindex="0" hidden><span class="r-err">✖ BND001 error</span>  <span class="r-loc">users.controller.ts:2</span>
@@ -267,27 +265,25 @@ export class UsersController {
           <h2 id="contract-title">The contract is a file your team reviews</h2>
           <p><code>nobypass init</code> reads <code>composer.json</code>, PSR-4 mappings, <code>package.json</code> and <code>tsconfig</code> paths, then writes a proposal. It starts from a preset and never treats the most common pattern in your code as correct.</p>
           <p>Nothing is enforced until a person runs <code>nobypass approve</code> in a terminal. CI and agents cannot approve it.</p>
-          <p class="path" aria-label="Approved path: controller, support, service, repository, model">
-            <span>controller</span><span>support</span><span>service</span><span>repository</span><span>model</span>
+          <p class="path" aria-label="Approved path: controller, service, repository, model">
+            <span>controller</span><span>service</span><span>repository</span><span>model</span>
           </p>
-          <p><code>allowed_direct</code> is about direct dependencies only. A controller reaching the model through every layer above is fine. A controller importing the model is not.</p>
+          <p><code>allowed_direct</code> is about direct dependencies only. A controller reaching the model through every layer above is fine. A controller importing the model, or reaching a repository through a Laravel facade, is not.</p>
         </div>
 <pre class="code yaml" tabindex="0" aria-label=".nobypass.yml excerpt"><code><span class="y-k">layers:</span>
   <span class="y-k">controller:</span> [<span class="y-s">"app/Http/Controllers/**/*.php"</span>]
-  <span class="y-k">support:</span>    [<span class="y-s">"app/Support/**/*.php"</span>]
   <span class="y-k">service:</span>    [<span class="y-s">"app/Services/**/*.php"</span>]
   <span class="y-k">repository:</span> [<span class="y-s">"app/Repositories/**/*.php"</span>]
   <span class="y-k">model:</span>      [<span class="y-s">"app/Models/**/*.php"</span>]
 <span class="y-k">dependencies:</span>
   <span class="y-k">allowed_direct:</span>
-    <span class="y-k">controller:</span> [support]
-    <span class="y-k">support:</span>    [service]
+    <span class="y-k">controller:</span> [service]
     <span class="y-k">service:</span>    [repository]
     <span class="y-k">repository:</span> [model]
     <span class="y-k">model:</span>      []
 <span class="y-k">rules:</span>
   <span class="y-k">direct_orm_access:</span>
-    <span class="y-k">deny_in:</span>  [controller, support, service]
+    <span class="y-k">deny_in:</span>  [controller, service]
     <span class="y-k">allow_in:</span> [repository]
   <span class="y-k">catch_policy:</span>
     <span class="y-k">discourage_in:</span> [service, repository]
@@ -308,7 +304,7 @@ export class UsersController {
           <tbody>
             <tr><td><code>BND001</code></td><td>A direct dependency the contract does not allow</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>BND002</code></td><td>Eloquent, <code>DB::</code>, Prisma or TypeORM access outside the approved layers</td><td><span class="sev sev-e">error</span></td></tr>
-            <tr><td><code>BND003</code></td><td>Skipping one boundary, such as controller to service when the route is controller, support, service</td><td><span class="sev sev-e">error</span></td></tr>
+            <tr><td><code>BND003</code></td><td>Skipping one layer, such as controller to repository when the route is controller, service, repository</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>BND004</code></td><td>A dependency cycle between layers</td><td><span class="sev sev-e">error</span></td></tr>
             <tr><td><code>EXC001</code></td><td>A <code>catch</code> where the contract discourages it, without a documented purpose</td><td><span class="sev sev-w">warning</span></td></tr>
             <tr><td><code>CFG001</code></td><td>A file in scope that matches no layer, or several</td><td><span class="sev sev-w">warning</span></td></tr>
@@ -322,10 +318,14 @@ export class UsersController {
       <div class="wrap">
         <div class="head">
           <h2 id="start-title">From an existing repository to a required check</h2>
-          <p>Node 20 or newer. Run these in the root of a Laravel or NestJS project.</p>
+          <p>Node 20 or newer. Run these in the root of a Laravel or NestJS project. Until the npm release, install from GitHub; every <code>npx nobypass</code> command then runs the installed copy.</p>
         </div>
 
         <ol class="cmds">
+          <li>
+            <div class="cmd-line"><code>npm install --save-dev github:lexyerresta/nobypass</code><button class="copy" type="button" data-copy="npm install --save-dev github:lexyerresta/nobypass" aria-label="Copy npm install --save-dev github:lexyerresta/nobypass">Copy</button></div>
+            <p>Adds the CLI to your <code>devDependencies</code>, so CI gets it from <code>npm ci</code>.</p>
+          </li>
           <li>
             <div class="cmd-line"><code>npx nobypass init</code><button class="copy" type="button" data-copy="npx nobypass init" aria-label="Copy npx nobypass init">Copy</button></div>
             <p>Writes <code>.nobypass.proposed.yml</code> and a discovery report. Your source files and agent instructions are not touched.</p>
@@ -367,7 +367,8 @@ Never edit `.nobypass.yml`, the baseline or
             <p>Make this a required check and protect <code>.nobypass.yml</code> with CODEOWNERS. SARIF output shows findings inline on the pull request.</p>
 <pre class="code small" tabindex="0"><code><span class="y-k">- uses:</span> actions/checkout@v4
   <span class="y-k">with:</span> { fetch-depth: 0 }
-<span class="y-k">- run:</span> npx --yes nobypass@0.1.0 check
+<span class="y-k">- run:</span> npm ci
+<span class="y-k">- run:</span> npx nobypass check
     --since origin/${{ github.base_ref }}
     --format sarif --output nobypass.sarif
 <span class="y-k">- uses:</span> github/codeql-action/upload-sarif@v3

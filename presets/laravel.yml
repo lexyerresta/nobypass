@@ -1,4 +1,13 @@
-# NoBypass preset: Laravel layered architecture.
+# NoBypass preset: Laravel service-repository architecture.
+#
+# Controller -> Service -> Repository -> Model is the widely used Laravel layering built on two
+# public patterns: Service Layer and Repository (Martin Fowler, Patterns of Enterprise Application
+# Architecture, 2002). Repository interfaces are bound to Eloquent implementations in a service
+# provider, as described in the Laravel docs ("Binding Interfaces To Implementations").
+#
+# Laravel facades are understood: a call through a custom facade (getFacadeAccessor) or a real-time
+# facade (Facades\App\...) counts as a dependency on the class behind it.
+#
 # Discovery starts from this preset, drops layers that have no files in your repository,
 # and re-wires the chain around them. Review every line before approving.
 schema: 1
@@ -11,12 +20,15 @@ projects:
       - app/**/*.php
     layers:
       controller: ["app/Http/Controllers/**/*.php"]
-      support: ["app/Support/**/*.php"]
       service: ["app/Services/**/*.php"]
+      # Interfaces (Contracts/ or Interfaces/) and Eloquent implementations both live here.
       repository: ["app/Repositories/**/*.php"]
       model: ["app/Models/**/*.php"]
-      # Framework glue and data types that any layer may use.
+      # Framework glue, facades, helpers and data types that any layer may use.
       shared:
+        - "app/Facades/**/*.php"
+        - "app/Helpers/**/*.php"
+        - "app/Support/**/*.php"
         - "app/Http/Requests/**/*.php"
         - "app/Http/Resources/**/*.php"
         - "app/Http/Middleware/**/*.php"
@@ -41,8 +53,7 @@ projects:
         - "app/Traits/**/*.php"
     dependencies:
       allowed_direct:
-        controller: [support]
-        support: [service]
+        controller: [service]
         service: [repository]
         repository: [model]
         model: []
@@ -54,7 +65,7 @@ projects:
     rules:
       direct_orm_access:
         enabled: true
-        deny_in: [controller, support, service]
+        deny_in: [controller, service]
         allow_in: [repository]
         severity: error
       catch_policy:

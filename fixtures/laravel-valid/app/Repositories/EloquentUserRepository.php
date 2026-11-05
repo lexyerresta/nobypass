@@ -3,9 +3,10 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Repositories\Contracts\UserRepository;
 use Illuminate\Support\Facades\DB;
 
-class UserRepository
+class EloquentUserRepository implements UserRepository
 {
     public function active(): array
     {

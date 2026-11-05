@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Repositories\UserRepository;
+use App\Repositories\Contracts\UserRepository;
 use App\Services\Exceptions\RegistrationFailed;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class UserService
@@ -12,9 +13,14 @@ class UserService
     {
     }
 
-    public function activeUsers(): array
+    public function listActive(): array
     {
         return $this->repository->active();
+    }
+
+    public function countActive(): int
+    {
+        return count($this->repository->active());
     }
 
     public function register(array $data): array
@@ -22,8 +28,8 @@ class UserService
         return DB::transaction(function () use ($data) {
             try {
                 return $this->repository->create($data);
-            } catch (\Illuminate\Database\QueryException $e) { // nobypass-allow EXC001: wrap infrastructure error as a domain error
-                throw new RegistrationFailed($data['email'], previous: $e);
+            } catch (QueryException $e) { // nobypass-allow EXC001: wrap infrastructure error as a domain error
+                throw new RegistrationFailed($data['email'], $e);
             }
         });
     }

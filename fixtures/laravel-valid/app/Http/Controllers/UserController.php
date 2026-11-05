@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
-use App\Support\UserSupport;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserSupport $users)
+    public function __construct(private readonly UserService $users)
     {
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Repositories\UserRepository;
+use App\Repositories\Contracts\UserRepository;
 use Illuminate\Support\Facades\DB;
 
 class UserService
@@ -11,9 +11,14 @@ class UserService
     {
     }
 
-    public function activeUsers(): array
+    public function listActive(): array
     {
         return DB::table('users')->where('active', true)->get()->all();
+    }
+
+    public function countActive(): int
+    {
+        return count($this->listActive());
     }
 
     public function register(array $data): array

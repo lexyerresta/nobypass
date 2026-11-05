@@ -4,16 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
-use App\Repositories\UserRepository;
-use App\Services\UserService;
+use App\Repositories\Contracts\UserRepository;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(
-        private readonly UserService $service,
-        private readonly UserRepository $repository,
-    ) {
+    public function __construct(private readonly UserRepository $users)
+    {
     }
 
     public function index(): JsonResponse
@@ -26,6 +23,6 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        return response()->json($this->service->register($request->validated()), 201);
+        return response()->json($this->users->create($request->validated()), 201);
     }
 }

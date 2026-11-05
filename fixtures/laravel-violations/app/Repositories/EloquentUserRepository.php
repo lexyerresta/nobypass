@@ -3,10 +3,16 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Repositories\Contracts\UserRepository;
 use App\Services\UserService;
 
-class UserRepository
+class EloquentUserRepository implements UserRepository
 {
+    public function active(): array
+    {
+        return User::query()->where('active', true)->get()->all();
+    }
+
     public function create(array $data): array
     {
         return User::create($data)->toArray();
@@ -14,6 +20,6 @@ class UserRepository
 
     public function activeViaService(UserService $service): array
     {
-        return $service->activeUsers();
+        return $service->listActive();
     }
 }

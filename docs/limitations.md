@@ -7,7 +7,7 @@ NoBypass claims to prevent **detectable** architecture violations. It never clai
 - **Runtime call flow.** Only *direct* static dependencies are checked. NoBypass does not prove that every request travels through every layer.
 - **Instance-level ORM calls on untyped values.** `$user->save()`, `$user->posts()->create()` and `repo.find()` called on a value whose type isn't visible in the file are not detected. Static Eloquent calls, `new Model`, `DB::` and calls through injected or module-level clients are detected.
 - **Aliasing.** `$q = User::query()` inside a repository, passed to a controller and used there, is not tracked. Neither is `const users = this.prisma.user; users.findMany()`.
-- **Container magic.** Laravel `app(UserRepository::class)`, `resolve()` and facades you define yourself are only seen through their class reference. NestJS custom provider tokens (`@Inject('USERS')`) are not mapped to classes.
+- **Container magic.** Custom facades (`getFacadeAccessor()` returning a class) and real-time facades (`Facades\App\...`) are resolved to the class behind them. Facades whose accessor is a string binding key (`'users'`), `app('users')` and `resolve()` with a string are not. `app(UserRepository::class)` is seen through its class reference. NestJS custom provider tokens (`@Inject('USERS')`) are not mapped to classes.
 - **Dynamic code.** Dynamic ORM-style static calls (`$class::where()`) and computed `import(name)` / `require(name)` are reported as unverified (`ANL001` warning, confidence `low`). They are never treated as compliant.
 
 ## Configuration-related gaps
@@ -37,4 +37,4 @@ NoBypass claims to prevent **detectable** architecture violations. It never clai
 
 ## Precision
 
-The curated fixtures in `test/` are the precision target: 43 violation cases and 34 compliant cases, all passing. No precision figure is claimed for arbitrary production repositories.
+The curated fixtures in `test/` are the precision target: 45 violation cases and 36 compliant cases, all passing. No precision figure is claimed for arbitrary production repositories.

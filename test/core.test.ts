@@ -258,7 +258,7 @@ describe('fixtures', () => {
   it('explain points at the approved flow', () => {
     const res = explain(path.join(FIXTURES, 'laravel-violations'), 'BND002', 'app/Http/Controllers/UserController.php');
     expect(res.findings).toHaveLength(1);
-    expect(res.text).toContain('controller → support → service → repository');
+    expect(res.text).toContain('controller → service → repository');
   });
 });
 
@@ -273,7 +273,9 @@ describe('discovery', () => {
     const p = result.projects[0];
     expect(p.project.framework).toBe('laravel');
     expect(p.evidence.join('\n')).toContain('laravel/framework');
-    expect(p.unclassified).toEqual(['app/Helpers/Formatting.php']);
+    expect(p.unclassified).toEqual([]);
+    expect(p.layers.find((l) => l.name === 'shared')?.globs).toContain('app/Helpers/**/*.php');
+    expect(p.project.dependencies.allowed_direct.controller).toEqual(['service']);
     expect(p.contradictions.length).toBeGreaterThan(0);
     // The proposal must be a valid contract.
     expect(() => parseContract(renderProposalYaml(result), 'proposal')).not.toThrow();

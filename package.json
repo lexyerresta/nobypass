@@ -22,7 +22,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "prepare": "npm run build"
   },
   "keywords": [
     "architecture",
@@ -46,5 +47,11 @@
     "@types/node": "^22.20.5",
     "@types/picomatch": "^3.0.2",
     "vitest": "^5.1.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lexyerresta/nobypass.git"
+  },
+  "homepage": "https://nobypass.nodezio.com",
+  "author": "Nodezio"
 }

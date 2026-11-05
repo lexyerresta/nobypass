@@ -50,6 +50,26 @@ function isEloquentStatic(method: string): boolean {
 interface ClassInfo {
   file: string;
   extends: string | null;
+  /** For Laravel facades: the class returned by getFacadeAccessor(), when it is a class name. */
+  facadeAccessor: string | null;
+}
+
+const FACADE_BASE = 'illuminate\\support\\facades\\facade';
+/** Laravel real-time facades: `Facades\App\Services\Foo` proxies `App\Services\Foo`. */
+const REALTIME_FACADE = /^facades\\/i;
+
+/** Returns the class named by `return X::class;` or `return 'App\X';` inside getFacadeAccessor(). */
+function facadeAccessorOf(classNode: Node, scope: Scope): string | null {
+  for (const member of classNode.body ?? []) {
+    if (member.kind !== 'method' || member.name?.name?.toLowerCase() !== 'getfacadeaccessor') continue;
+    for (const stmt of member.body?.children ?? []) {
+      if (stmt.kind !== 'return' || !stmt.expr) continue;
+      const e = stmt.expr;
+      if (e.kind === 'staticlookup' && e.offset?.name === 'class' && e.what?.kind === 'name') return resolveName(e.what, scope);
+      if (e.kind === 'string' && /\\/.test(e.value)) return String(e.value).replace(/^\\+/, '');
+    }
+  }
+  return null;
 }
 
 interface Psr4Entry {
@@ -201,7 +221,8 @@ export const phpAdapter: Adapter = {
           if (!['class', 'interface', 'trait', 'enum'].includes(child.kind) || !child.name?.name) continue;
           const fqcn = scope.namespace ? `${scope.namespace}\\${child.name.name}` : child.name.name;
           const ext = child.kind === 'class' && child.extends ? resolveName(child.extends, scope) : null;
-          classIndex.set(fqcn.toLowerCase(), { file, extends: ext });
+          const facadeAccessor = child.kind === 'class' ? facadeAccessorOf(child, scope) : null;
+          classIndex.set(fqcn.toLowerCase(), { file, extends: ext, facadeAccessor });
         }
       }
     }
@@ -234,6 +255,20 @@ export const phpAdapter: Adapter = {
       return res;
     };
 
+    /** The class a Laravel facade proxies, when the facade extends Illuminate's Facade and names a class. */
+    const facadeTargetOf = (fqcn: string): string | null => {
+      const info = classIndex.get(fqcn.toLowerCase());
+      if (!info?.facadeAccessor) return null;
+      const seen = new Set<string>();
+      let cur: string | null = info.extends;
+      while (cur && !seen.has(cur.toLowerCase())) {
+        if (cur.toLowerCase() === FACADE_BASE) return info.facadeAccessor;
+        seen.add(cur.toLowerCase());
+        cur = classIndex.get(cur.toLowerCase())?.extends ?? null;
+      }
+      return null;
+    };
+
     const isModelClass = (fqcn: string): boolean => {
       const seen = new Set<string>();
       let cur: string | null = fqcn;
@@ -262,7 +297,12 @@ export const phpAdapter: Adapter = {
         const unresolvedSeen = new Set<string>();
         const injected = new Set<Node>();
 
-        const addDep = (fqcn: string, line: number, kind: DependencyKind) => {
+        const addDep = (fqcn: string, line: number, kind: DependencyKind, via?: string) => {
+          // A real-time facade is a dependency on the class it proxies.
+          if (REALTIME_FACADE.test(fqcn)) {
+            addDep(fqcn.replace(REALTIME_FACADE, ''), line, kind, `real-time facade ${fqcn}`);
+            return;
+          }
           const res = resolveClass(fqcn);
           if (res.status === 'unresolved') {
             if (!unresolvedSeen.has(fqcn.toLowerCase())) {
@@ -287,11 +327,14 @@ export const phpAdapter: Adapter = {
           }
           deps.set(key, {
             target: res.status === 'internal' ? res.file : null,
-            symbol: fqcn,
+            symbol: via ? `${fqcn} (via ${via})` : fqcn,
             line,
             kind,
             external: res.status === 'external',
           });
+          // Calling a facade is calling the class behind it, so that edge is checked too.
+          const proxied = res.status === 'internal' ? facadeTargetOf(fqcn) : null;
+          if (proxied && proxied.toLowerCase() !== key) addDep(proxied, line, kind, `facade ${fqcn}`);
         };
 
         for (const { scope, children } of namespaceBlocks(ast)) {

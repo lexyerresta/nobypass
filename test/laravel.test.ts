@@ -21,6 +21,17 @@ const S = 'app/Services/UserService.php';
 const R = 'app/Repositories/UserRepository.php';
 const SUP = 'app/Support/UserSupport.php';
 
+const FACADE_CONTRACT = {
+      layers: {
+        controller: ['app/Http/Controllers/**/*.php'],
+        support: ['app/Support/**/*.php'],
+        service: ['app/Services/**/*.php'],
+        repository: ['app/Repositories/**/*.php'],
+        model: ['app/Models/**/*.php'],
+        shared: ['app/Http/Requests/**/*.php', 'app/DTOs/**/*.php', 'app/Facades/**/*.php'],
+      },
+    };
+
 const positive: Case[] = [
   {
     name: 'controller imports a model and queries it',
@@ -190,9 +201,41 @@ const positive: Case[] = [
     code: php('App\\Services', 'class UserService { public function i(string $cls) { return $cls::where("a", 1)->get(); } }'),
     expected: ['ANL001'],
   },
+  {
+    name: 'real-time facade reaching a repository',
+    file: C,
+    code: php(String.raw`App\Http\Controllers`, 'class UserController { public function i() { return UserRepository::all(); } }', String.raw`use Facades\App\Repositories\UserRepository;`),
+    expected: ['BND001'],
+  },
+  {
+    name: 'custom facade that proxies a repository',
+    file: C,
+    code: php(String.raw`App\Http\Controllers`, 'class UserController { public function i() { return Users::all(); } }', String.raw`use App\Facades\Users;`),
+    extra: {
+      'app/Facades/Users.php': php(String.raw`App\Facades`, 'class Users extends Facade { protected static function getFacadeAccessor() { return UserRepository::class; } }', String.raw`use App\Repositories\UserRepository;` + '\n' + String.raw`use Illuminate\Support\Facades\Facade;`),
+    },
+    contract: FACADE_CONTRACT,
+    expected: ['BND001'],
+  },
 ];
 
 const negative: Case[] = [
+  {
+    name: 'custom facade that proxies an allowed layer',
+    file: C,
+    code: php(String.raw`App\Http\Controllers`, 'class UserController { public function i() { return Support::go(); } }', String.raw`use App\Facades\Support;`),
+    extra: {
+      'app/Facades/Support.php': php(String.raw`App\Facades`, 'class Support extends Facade { protected static function getFacadeAccessor() { return UserSupport::class; } }', String.raw`use App\Support\UserSupport;` + '\n' + String.raw`use Illuminate\Support\Facades\Facade;`),
+    },
+    contract: FACADE_CONTRACT,
+    expected: [],
+  },
+  {
+    name: 'real-time facade reaching an allowed layer',
+    file: C,
+    code: php(String.raw`App\Http\Controllers`, 'class UserController { public function i() { return UserSupport::go(); } }', String.raw`use Facades\App\Support\UserSupport;`),
+    expected: [],
+  },
   {
     name: 'repository queries Eloquent',
     file: R,

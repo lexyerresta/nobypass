@@ -34,7 +34,7 @@ Verification ran in Microsoft Edge through Playwright: light and dark themes, at
 - "Run it on your repo" goes to #start.
 - Demo NestJS/agent, NestJS/fix, Laravel/fix and Laravel/agent each show the matching code and output and update the file label.
 - Theme toggle switches between light and dark, updates its label and persists after a reload.
-- All five copy buttons copy the exact command, show "Copied" and announce it in the status line.
+- All six copy buttons copy the exact command, show "Copied" and announce it in the status line.
 - With the clipboard blocked, a copy button shows "Failed" and the status line gives instructions.
 - The "Read the source on GitHub", footer and limitation links point to real URLs in the repository.
 - The "Nodezio" links in the header and footer go to https://nodezio.com, which returns 200. The header link has a 44px tap target and sits second in the Tab order, right after the wordmark.
@@ -65,7 +65,7 @@ Verification ran in Microsoft Edge through Playwright: light and dark themes, at
 | Focal point per screen | PASS | Hero H1, statement H2 in red, demo output, contract YAML, rules table, command rail. |
 | Structural whitespace | PASS | Bands with borders separate the statement and contract sections from the open sections. |
 | One deliberate accent | PASS | Orange is used only on "No" in the wordmark, "Check.", the primary CTA, step numbers, focus rings and the limitations link. |
-| Identity motif | PASS | The layer path (`controller → support → service → repository`) appears in the hero diagram, the demo output and the contract section. |
+| Identity motif | PASS | The layer path (`controller → service → repository → model`) appears in the hero diagram, the demo output and the contract section. |
 | Design Read declared | PASS | "Open-source developer-tool landing page for backend engineers and tech leads using AI coding agents, precise documentation-like engineering language." |
 
 ## Block 4: Craftsmanship and Quality Locks (every answer must be "no")

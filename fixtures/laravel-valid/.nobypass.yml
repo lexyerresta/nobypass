@@ -6,15 +6,13 @@ projects:
     framework: laravel
     layers:
       controller: ["app/Http/Controllers/**/*.php"]
-      support: ["app/Support/**/*.php"]
       service: ["app/Services/**/*.php"]
       repository: ["app/Repositories/**/*.php"]
       model: ["app/Models/**/*.php"]
-      shared: ["app/Http/Requests/**/*.php", "app/Providers/**/*.php"]
+      shared: ["app/Http/Requests/**/*.php", "app/Providers/**/*.php", "app/Facades/**/*.php"]
     dependencies:
       allowed_direct:
-        controller: [support]
-        support: [service]
+        controller: [service]
         service: [repository]
         repository: [model]
         model: []
@@ -24,7 +22,7 @@ projects:
     rules:
       direct_orm_access:
         enabled: true
-        deny_in: [controller, support, service]
+        deny_in: [controller, service]
         allow_in: [repository]
         severity: error
       catch_policy:

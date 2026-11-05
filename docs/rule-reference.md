@@ -12,8 +12,8 @@ Every finding has the same shape:
   "targetLayer": "model",
   "symbol": "App\\Models\\User::where",
   "evidence": "controller performs data access: Eloquent query User::where()",
-  "expected": "Data access only in repository, reached via controller → support → service → repository",
-  "suggestion": "Move the query into the repository layer and call it through controller → support → service → repository.",
+  "expected": "Data access only in repository, reached via controller → service → repository",
+  "suggestion": "Move the query into the repository layer and call it through controller → service → repository.",
   "confidence": "high",
   "fingerprint": "2a6f1d65f8ff9d5a5847",
   "project": "api",
@@ -33,6 +33,7 @@ A file in layer **A** directly depends on a file in layer **B**, and B is not in
 These count as dependencies:
 
 - **PHP:** `use` imports, constructor-injected types, `new X`, `X::method()`, `X::CONST`, `X::class`, `extends`, `implements`, traits, parameter/return/property types, `catch` types, `instanceof` and attributes. Constructor injection counts as a runtime dependency. Other type positions are *type-only*.
+- **Laravel facades:** calling a facade also counts as depending on the class it proxies. For a custom facade, that is the class returned by `getFacadeAccessor()` (`return Foo::class;` or a class-name string). For a real-time facade, `Facades\App\Services\Foo` resolves to `App\Services\Foo`. A facade therefore cannot hide a controller → repository call.
 - **TypeScript:** `import`, `export … from`, `import x = require()`, `require()`, `import()` with a literal specifier. `import type` and all-`type` specifiers are *type-only*.
 
 Type-only dependencies are enforced by default. Set `type_only: ignore` to allow them.
@@ -60,9 +61,9 @@ These do **not** count as data access:
 
 ## BND003: boundary bypass
 
-This is a specific form of BND001. The target layer *is* reachable through the approved graph, but only via **exactly one** intermediate layer that the file skipped. Example: a controller injects a service when the contract says `controller → support → service`.
+This is a specific form of BND001. The target layer *is* reachable through the approved graph, but only via **exactly one** intermediate layer that the file skipped. Example: a controller injects a repository when the contract says `controller → service → repository`.
 
-Reaching further down is reported as BND001, with the approved route in `expected`. An example is a controller importing a repository or model three layers away.
+Reaching further down is reported as BND001, with the approved route in `expected`. An example is a controller importing the model two layers away.
 
 ## BND004: layer cycle
 
