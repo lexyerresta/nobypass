@@ -272,6 +272,8 @@ fixtures/                 a valid and a violating sample project for every stack
 site/                     landing page (static, deployed on Vercel with Root Directory = site)
 ```
 
+The landing page demo (`site/demo-data.js`) is generated from the fixtures by the real checker: run `npm run site:demo` after changing a fixture or a rule. CI fails if the committed file is out of date.
+
 To add a detector or rule, add a violating case and a compliant case to the matching test file first (`test/laravel.test.ts`, `test/nestjs.test.ts` or `test/stacks.test.ts`). Adapters only produce normalized facts (dependencies, data-access operations, catch sites, unresolved references), and the rules live in `src/core/rules.ts`.
 
 The landing page in `site/` was designed with the [anti-slop](https://github.com/miqdadbadjuber/anti-slop) rules by Miqdad Badjuber (MIT). Its direction is in [site/DESIGN.md](site/DESIGN.md) and its gate report in [site/DELIVERY-GATE.md](site/DELIVERY-GATE.md). It uses IBM Plex fonts (SIL OFL 1.1, see `site/fonts/OFL.txt`).

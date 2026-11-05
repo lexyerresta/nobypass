@@ -2,7 +2,7 @@
 
 Rules: [anti-slop](https://github.com/miqdadbadjuber/anti-slop) by Miqdad Badjuber (MIT). Mode: during. Direction: [DESIGN.md](DESIGN.md). Dial: ENERGY 1 / RHYTHM 2 / MOTION 1.
 
-Verification ran in Microsoft Edge through Playwright: light and dark themes, at 1280px and 375px. That came to 72 automated checks, with 72 PASS and 0 FAIL.
+Verification ran in Microsoft Edge through Playwright: light and dark themes, at 1280px and 375px. The latest run (stack tabs redesign) made 104 automated checks: 104 PASS, 0 FAIL.
 
 ## Block 1: Hard Gate (every answer must be "no")
 
@@ -32,7 +32,7 @@ Verification ran in Microsoft Edge through Playwright: light and dark themes, at
 
 - Nav "Demo", "Contract", "Rules", "Setup" scroll to the matching existing section.
 - "Run it on your repo" goes to #start.
-- Demo NestJS/agent, NestJS/fix, Laravel/fix and Laravel/agent each show the matching code and output and update the file label.
+- Demo: each of the 8 stack tabs, in both versions (agent and fix), shows the fixture file, the same number of findings as the real check, the same number of flagged lines, and the matching FAIL/PASS verdict. Clicking a finding highlights its code line. ArrowRight and End move between tabs (ARIA tabs pattern). The version toggle works with Enter.
 - Theme toggle switches between light and dark, updates its label and persists after a reload.
 - All six copy buttons copy the exact command, show "Copied" and announce it in the status line.
 - With the clipboard blocked, a copy button shows "Failed" and the status line gives instructions.

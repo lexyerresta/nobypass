@@ -20,6 +20,9 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+      - name: Landing page demo data matches the fixtures
+        shell: bash
+        run: node scripts/build-site-demo.mjs && git diff --exit-code site/demo-data.js
       - name: Fixtures behave as documented
         shell: bash
         run: |

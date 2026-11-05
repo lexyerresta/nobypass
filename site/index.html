@@ -52,7 +52,8 @@
           <a class="btn btn-primary" href="#start">Run it on your repo</a>
           <a class="btn" href="https://github.com/lexyerresta/nobypass">Read the source on GitHub</a>
         </div>
-        <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account. PHP, TypeScript/JavaScript, Python and Java.</p>
+        <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account.</p>
+        <p class="hero-stacks"><span class="hs-label">Works with</span> Laravel · Symfony · NestJS · Express · Fastify · Next.js · Django · FastAPI · Spring Boot</p>
       </div>
 
       <figure class="diagram">
@@ -83,179 +84,34 @@
       </div>
     </section>
 
-    <section id="demo" class="demo wrap" aria-labelledby="demo-title">
-      <div class="head">
-        <h2 id="demo-title">Same endpoint, before and after</h2>
-        <p>The code and output below are the fixtures in the repository, run through <code>nobypass check</code>. Nothing here is mocked.</p>
-      </div>
-
-      <div class="controls">
-        <div class="toggle-group" role="group" aria-label="Framework">
-          <button type="button" data-fw="laravel" aria-pressed="true">Laravel</button>
-          <button type="button" data-fw="nestjs" aria-pressed="false">NestJS</button>
-        </div>
-        <div class="toggle-group" role="group" aria-label="Version of the code">
-          <button type="button" data-ver="bad" aria-pressed="true">Written by the agent</button>
-          <button type="button" data-ver="good" aria-pressed="false">After the fix</button>
-        </div>
-      </div>
-
-      <div class="panes">
-        <div class="pane">
-          <p class="pane-label">Code: <span id="code-file">app/Http/Controllers/UserController.php</span></p>
-<pre class="code" id="code-laravel-bad" tabindex="0"><code>&lt;?php
-
-namespace App\Http\Controllers;
-
-use App\Http\Requests\StoreUserRequest;
-use App\Models\User;
-use App\Repositories\Contracts\UserRepository;
-use Illuminate\Http\JsonResponse;
-
-class UserController extends Controller
-{
-    public function __construct(private readonly UserRepository $users)
-    {
-    }
-
-    public function index(): JsonResponse
-    {
-        // "Quick fix" from an AI agent: query straight from the controller.
-        $users = User::where('active', true)-&gt;orderBy('name')-&gt;get();
-
-        return response()-&gt;json($users);
-    }
-
-    public function store(StoreUserRequest $request): JsonResponse
-    {
-        return response()-&gt;json($this-&gt;users-&gt;create($request-&gt;validated()), 201);
-    }
-}</code></pre>
-<pre class="code" id="code-laravel-good" tabindex="0" hidden><code>&lt;?php
-
-namespace App\Http\Controllers;
-
-use App\Http\Requests\StoreUserRequest;
-use App\Services\UserService;
-use Illuminate\Http\JsonResponse;
-
-class UserController extends Controller
-{
-    public function __construct(private readonly UserService $users)
-    {
-    }
-
-    public function index(): JsonResponse
-    {
-        return response()-&gt;json($this-&gt;users-&gt;listActive());
-    }
-
-    public function store(StoreUserRequest $request): JsonResponse
-    {
-        return response()-&gt;json($this-&gt;users-&gt;register($request-&gt;validated()), 201);
-    }
-}</code></pre>
-<pre class="code" id="code-nestjs-bad" tabindex="0" hidden><code>import { Body, Controller, Get, Post } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import type { UsersRepository } from './users.repository';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UsersService } from './users.service';
-
-@Controller('users')
-export class UsersController {
-  constructor(
-    private readonly users: UsersService,
-    private readonly prisma: PrismaService,
-  ) {}
-
-  // "Quick fix" from an AI agent: read straight from Prisma in the controller.
-  @Get()
-  list() {
-    return this.prisma.user.findMany({ where: { active: true } });
-  }
-
-  @Post()
-  create(@Body() dto: CreateUserDto) {
-    return this.users.register(dto);
-  }
-
-  describe(repo: UsersRepository) {
-    return repo.constructor.name;
-  }
-}</code></pre>
-<pre class="code" id="code-nestjs-good" tabindex="0" hidden><code>import { Body, Controller, Get, Post } from '@nestjs/common';
-import { UsersService } from '@app/users/users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-
-@Controller('users')
-export class UsersController {
-  constructor(private readonly users: UsersService) {}
-
-  @Get()
-  list() {
-    return this.users.listActive();
-  }
-
-  @Post()
-  create(@Body() dto: CreateUserDto) {
-    return this.users.register(dto);
-  }
-}</code></pre>
+    <section id="demo" class="demo" aria-labelledby="demo-title">
+      <div class="wrap">
+        <div class="head demo-head">
+          <h2 id="demo-title">Same endpoint, before and after</h2>
+          <p>Pick a stack. The code is the fixture in the repository and the output is what <code>nobypass check</code> really prints for it. Flagged lines are marked in the code.</p>
         </div>
 
-        <div class="pane pane-report" aria-live="polite">
-          <p class="pane-label">Output of <code>nobypass check</code> <span class="abridged">(abridged)</span></p>
-<pre class="report" id="out-laravel-bad" tabindex="0"><span class="r-err">✖ BND003 error</span>  <span class="r-loc">UserController.php:12</span>
-  controller depends directly on repository:
-  App\Repositories\Contracts\UserRepository
-  <span class="r-dim">expected:</span> repository is reached only through
-            controller → service → repository
+        <div class="stack-tabs" role="tablist" aria-label="Stack" id="stack-tabs"></div>
 
-<span class="r-err">✖ BND001 error</span>  <span class="r-loc">UserController.php:19</span>
-  controller depends directly on model:
-  App\Models\User
-
-<span class="r-err">✖ BND002 error</span>  <span class="r-loc">UserController.php:19</span>
-  controller performs data access:
-  Eloquent query User::where()
-  <span class="r-dim">expected:</span> data access only in repository,
-            reached via controller → service
-            → repository
-  <span class="r-dim">fix:</span>      move the query into the repository layer
-
-<span class="r-dim">6 more findings in this fixture, including a
-real-time facade (Facades\App\Repositories\...)
-that reaches the repository from another controller</span>
-
-11 files analyzed · 7 new errors · 2 new warnings
-<span class="r-err">✖ FAIL: 7 blocking findings</span></pre>
-<pre class="report" id="out-laravel-good" tabindex="0" hidden>11 files analyzed · 0 new errors · 0 new warnings
-
-<span class="r-ok">✔ PASS: no new blocking architecture violations</span></pre>
-<pre class="report" id="out-nestjs-bad" tabindex="0" hidden><span class="r-err">✖ BND001 error</span>  <span class="r-loc">users.controller.ts:2</span>
-  controller depends directly on persistence:
-  src/prisma/prisma.service.ts
-  <span class="r-dim">expected:</span> controller may depend directly on: service
-
-<span class="r-err">✖ BND003 error</span>  <span class="r-loc">users.controller.ts:3</span>
-  controller depends directly on repository
-  (type-only reference)
-  <span class="r-dim">expected:</span> repository is reached only through
-            controller → service → repository
-
-<span class="r-err">✖ BND002 error</span>  <span class="r-loc">users.controller.ts:17</span>
-  controller performs data access through
-  PrismaService (this.prisma.user.findMany)
-  <span class="r-dim">fix:</span>      move the query into the repository layer
-
-<span class="r-dim">3 more findings in this fixture</span>
-
-8 files analyzed · 5 new errors · 1 new warning
-<span class="r-err">✖ FAIL: 5 blocking findings</span></pre>
-<pre class="report" id="out-nestjs-good" tabindex="0" hidden>8 files analyzed · 0 new errors · 0 new warnings
-
-<span class="r-ok">✔ PASS: no new blocking architecture violations</span></pre>
+        <div class="demo-bar">
+          <div class="toggle-group" role="group" aria-label="Version of the code">
+            <button type="button" data-ver="bad" aria-pressed="true">Written by the agent</button>
+            <button type="button" data-ver="good" aria-pressed="false">After the fix</button>
+          </div>
+          <p class="demo-verdict" id="demo-verdict" aria-live="polite"></p>
         </div>
+
+        <div class="panes" role="tabpanel" id="demo-panel" aria-labelledby="stack-tab-laravel" tabindex="-1">
+          <div class="pane pane-code">
+            <p class="pane-label"><span id="code-file">app/Http/Controllers/UserController.php</span><span class="lang" id="code-lang">PHP</span></p>
+            <pre class="code numbered" id="code-view" tabindex="0" aria-label="Source code"><code></code></pre>
+          </div>
+          <div class="pane pane-report">
+            <p class="pane-label"><span>Output of <code>nobypass check</code></span></p>
+            <div class="report" id="report-view" tabindex="0" aria-label="Check output"></div>
+          </div>
+        </div>
+        <noscript><p class="noscript">The interactive demo needs JavaScript. The same fixtures are in <a href="https://github.com/lexyerresta/nobypass/tree/main/fixtures">fixtures/ on GitHub</a>.</p></noscript>
       </div>
     </section>
 
@@ -429,6 +285,7 @@ Never edit `.nobypass.yml`, the baseline or
     </div>
   </footer>
 
+  <script src="demo-data.js" defer></script>
   <script src="main.js" defer></script>
 </body>
 </html>

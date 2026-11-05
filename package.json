@@ -25,7 +25,8 @@
     "test": "vitest run",
     "prepublishOnly": "npm run build && npm test",
     "prepare": "npm run build",
-    "grammars": "node -e \"for (const g of ['python','java']) require('fs').copyFileSync('node_modules/tree-sitter-'+g+'/tree-sitter-'+g+'.wasm','grammars/tree-sitter-'+g+'.wasm')\""
+    "grammars": "node -e \"for (const g of ['python','java']) require('fs').copyFileSync('node_modules/tree-sitter-'+g+'/tree-sitter-'+g+'.wasm','grammars/tree-sitter-'+g+'.wasm')\"",
+    "site:demo": "npm run build && node scripts/build-site-demo.mjs"
   },
   "keywords": [
     "architecture",
