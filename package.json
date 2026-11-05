@@ -1,0 +1,50 @@
+{
+  "name": "nobypass",
+  "version": "0.1.0",
+  "description": "AI writes the code. Your architecture sets the rules. Local-first architecture contract checker for Laravel and NestJS.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "nobypass": "dist/cli/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "presets",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "architecture",
+    "ai",
+    "agents",
+    "laravel",
+    "nestjs",
+    "lint",
+    "boundaries",
+    "anti-slop"
+  ],
+  "dependencies": {
+    "commander": "^12.1.0",
+    "php-parser": "^3.7.0",
+    "picomatch": "^4.0.7",
+    "typescript": "^5.9.3",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/picomatch": "^3.0.2",
+    "vitest": "^5.1.0"
+  }
+}

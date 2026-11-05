@@ -1,0 +1,11 @@
+export { runCheck, classify, EXIT, type CheckResult, type CheckOptions } from './core/check.js';
+export { parseContract, loadContractFile, contractSchema, type Contract, type ProjectContract } from './core/config.js';
+export { analyzeProject } from './core/engine.js';
+export { explain } from './core/explain.js';
+export { approveContract } from './core/approve.js';
+export { buildBaseline } from './core/baseline.js';
+export { discover, renderProposalYaml, renderReport } from './discovery/index.js';
+export { agentInstructions, skillMarkdown, mergeIntoInstructions } from './agents/index.js';
+export { formatJson, formatSarif, formatText } from './core/format.js';
+export { RULES } from './core/rules.js';
+export type * from './core/types.js';

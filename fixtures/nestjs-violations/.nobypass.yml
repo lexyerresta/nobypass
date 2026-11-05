@@ -1,0 +1,30 @@
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: typescript
+    framework: nestjs
+    layers:
+      controller: ["src/**/*.controller.ts"]
+      service: ["src/**/*.service.ts", "!src/prisma/**"]
+      repository: ["src/**/*.repository.ts"]
+      persistence: ["src/prisma/**/*.ts"]
+      shared: ["src/main.ts", "src/**/*.module.ts", "src/**/dto/**/*.ts"]
+    dependencies:
+      allowed_direct:
+        controller: [service]
+        service: [repository]
+        repository: [persistence]
+        persistence: []
+        shared: ["*"]
+      shared: [shared]
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, service]
+        allow_in: [repository, persistence]
+        severity: error
+      catch_policy:
+        discourage_in: [service, repository]
+        severity: warning
+    exclude: ["**/*.spec.ts", "test/**"]

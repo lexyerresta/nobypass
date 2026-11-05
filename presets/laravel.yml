@@ -1,0 +1,72 @@
+# NoBypass preset: Laravel layered architecture.
+# Discovery starts from this preset, drops layers that have no files in your repository,
+# and re-wires the chain around them. Review every line before approving.
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: php
+    framework: laravel
+    include:
+      - app/**/*.php
+    layers:
+      controller: ["app/Http/Controllers/**/*.php"]
+      support: ["app/Support/**/*.php"]
+      service: ["app/Services/**/*.php"]
+      repository: ["app/Repositories/**/*.php"]
+      model: ["app/Models/**/*.php"]
+      # Framework glue and data types that any layer may use.
+      shared:
+        - "app/Http/Requests/**/*.php"
+        - "app/Http/Resources/**/*.php"
+        - "app/Http/Middleware/**/*.php"
+        - "app/Http/Kernel.php"
+        - "app/Providers/**/*.php"
+        - "app/Console/**/*.php"
+        - "app/Exceptions/**/*.php"
+        - "app/Jobs/**/*.php"
+        - "app/Events/**/*.php"
+        - "app/Listeners/**/*.php"
+        - "app/Mail/**/*.php"
+        - "app/Notifications/**/*.php"
+        - "app/Policies/**/*.php"
+        - "app/Enums/**/*.php"
+        - "app/DTOs/**/*.php"
+        - "app/Data/**/*.php"
+        - "app/Rules/**/*.php"
+        - "app/Casts/**/*.php"
+        - "app/View/**/*.php"
+        - "app/Observers/**/*.php"
+        - "app/Contracts/**/*.php"
+        - "app/Traits/**/*.php"
+    dependencies:
+      allowed_direct:
+        controller: [support]
+        support: [service]
+        service: [repository]
+        repository: [model]
+        model: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, support, service]
+        allow_in: [repository]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - vendor/**
+      - tests/**
+      - database/migrations/**
+      - database/seeders/**
+      - database/factories/**
+    exceptions: []
+    baseline: .nobypass/baseline.json

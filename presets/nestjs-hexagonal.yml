@@ -1,0 +1,52 @@
+# NoBypass preset: NestJS ports & adapters (hexagonal).
+# Controllers call application services; application depends on ports; adapters implement ports.
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: typescript
+    framework: nestjs
+    include:
+      - src/**/*.ts
+    layers:
+      controller: ["src/**/*.controller.ts"]
+      application: ["src/application/**/*.ts", "!src/**/*.controller.ts"]
+      domain: ["src/domain/**/*.ts", "!src/domain/ports/**"]
+      port: ["src/domain/ports/**/*.ts"]
+      adapter: ["src/infrastructure/**/*.ts", "!src/**/*.controller.ts"]
+      shared:
+        - "src/main.ts"
+        - "src/**/*.module.ts"
+        - "src/**/*.dto.ts"
+        - "src/**/dto/**/*.ts"
+        - "src/config/**/*.ts"
+        - "src/common/**/*.ts"
+    dependencies:
+      allowed_direct:
+        controller: [application]
+        application: [port, domain]
+        domain: []
+        port: [domain]
+        adapter: [port, domain]
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, application, domain, port]
+        allow_in: [adapter]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [application, domain]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/*.spec.ts"
+      - "**/*.e2e-spec.ts"
+      - "test/**"
+    exceptions: []
+    baseline: .nobypass/baseline.json

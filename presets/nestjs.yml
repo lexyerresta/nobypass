@@ -1,0 +1,72 @@
+# NoBypass preset: NestJS controller → service → repository → persistence.
+# Discovery drops layers that have no files in your repository and re-wires the chain.
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: typescript
+    framework: nestjs
+    include:
+      - src/**/*.ts
+    layers:
+      controller: ["src/**/*.controller.ts"]
+      service:
+        - "src/**/*.service.ts"
+        - "!src/**/prisma/**"
+        - "!src/**/*prisma*.service.ts"
+        - "!src/**/database/**"
+      repository: ["src/**/*.repository.ts"]
+      persistence:
+        - "src/**/prisma/**/*.ts"
+        - "src/**/*prisma*.service.ts"
+        - "src/**/database/**/*.ts"
+      # Wiring, DTOs, entities and request-pipeline glue that any layer may use.
+      shared:
+        - "src/main.ts"
+        - "src/**/*.module.ts"
+        - "src/**/*.dto.ts"
+        - "src/**/dto/**/*.ts"
+        - "src/**/*.entity.ts"
+        - "src/**/entities/**/*.ts"
+        - "src/**/*.interface.ts"
+        - "src/**/interfaces/**/*.ts"
+        - "src/**/*.types.ts"
+        - "src/**/*.enum.ts"
+        - "src/**/*.constants.ts"
+        - "src/**/*.guard.ts"
+        - "src/**/*.interceptor.ts"
+        - "src/**/*.filter.ts"
+        - "src/**/*.pipe.ts"
+        - "src/**/*.decorator.ts"
+        - "src/**/*.middleware.ts"
+        - "src/**/*.strategy.ts"
+        - "src/config/**/*.ts"
+        - "src/common/**/*.ts"
+    dependencies:
+      allowed_direct:
+        controller: [service]
+        service: [repository]
+        repository: [persistence]
+        persistence: []
+        shared: ["*"]
+      shared: [shared]
+      type_only: enforce
+      same_layer: allow
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, service]
+        allow_in: [repository, persistence]
+        severity: error
+      catch_policy:
+        enabled: true
+        discourage_in: [service, repository]
+        severity: warning
+      unclassified: warning
+    exclude:
+      - "**/*.spec.ts"
+      - "**/*.e2e-spec.ts"
+      - "test/**"
+    exceptions: []
+    baseline: .nobypass/baseline.json

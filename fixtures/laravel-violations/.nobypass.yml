@@ -1,0 +1,38 @@
+schema: 1
+projects:
+  - id: api
+    root: .
+    language: php
+    framework: laravel
+    layers:
+      controller: ["app/Http/Controllers/**/*.php"]
+      support: ["app/Support/**/*.php"]
+      service: ["app/Services/**/*.php"]
+      repository: ["app/Repositories/**/*.php"]
+      model: ["app/Models/**/*.php"]
+      shared: ["app/Http/Requests/**/*.php", "app/Providers/**/*.php"]
+    dependencies:
+      allowed_direct:
+        controller: [support]
+        support: [service]
+        service: [repository]
+        repository: [model]
+        model: []
+        shared: ["*"]
+      shared: [shared]
+      detect_cycles: true
+    rules:
+      direct_orm_access:
+        enabled: true
+        deny_in: [controller, support, service]
+        allow_in: [repository]
+        severity: error
+      catch_policy:
+        discourage_in: [service, repository]
+        severity: warning
+    exclude:
+      - vendor/**
+      - tests/**
+      - database/migrations/**
+      - database/seeders/**
+    baseline: .nobypass/baseline.json
