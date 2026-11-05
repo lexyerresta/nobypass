@@ -2,6 +2,8 @@
 
 **Your AI said it followed your architecture. Check.**
 
+Website: **https://nobypass.nodezio.com**
+
 NoBypass is a local-first, AI-agnostic CLI that stops *architecture drift*: code that works but quietly breaks the architecture your team chose. A typical example is an agent that "fixes" a feature by calling `User::where()` straight from a Laravel controller, or by injecting `PrismaService` into a NestJS controller.
 
 It runs offline with static analysis. It needs no LLM, no API key and no account. It ships adapters for **Laravel/PHP** and **NestJS/TypeScript**.
