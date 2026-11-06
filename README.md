@@ -1,14 +1,24 @@
 # NoBypass
 
+**English** · [Bahasa Indonesia](README.id.md)
+
+[![ci](https://github.com/lexyerresta/nobypass/actions/workflows/ci.yml/badge.svg)](https://github.com/lexyerresta/nobypass/actions/workflows/ci.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Your AI said it followed your architecture. Check.**
 
-Website: **https://nobypass.nodezio.com** · by [Nodezio](https://nodezio.com) · MIT
+Website and live demo: **https://nobypass.nodezio.com** · by [Nodezio](https://nodezio.com)
 
-NoBypass is a command-line checker for Laravel, Symfony, NestJS, Express, Fastify, Next.js, Django, FastAPI and Spring Boot projects. You write down which layer may call which: for example controller → service → repository → model. NoBypass then fails the check, locally or in CI, when code skips that path. It runs offline with static analysis. It needs no LLM, API key or account.
+NoBypass is a command-line checker for **Laravel, Symfony, NestJS, Express, Fastify, Next.js, Django, FastAPI and Spring Boot** projects. You write down which layer may call which, for example controller → service → repository → model. NoBypass fails the check, locally or in CI, whenever code skips that path. It runs offline with static analysis, and needs no LLM, API key or account.
 
-It exists because AI coding agents (and tired humans) produce code that works but quietly ignores your architecture:
+It exists because AI coding agents (and tired humans) write code that works but quietly ignores your architecture:
 
 ```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+
 class UserController extends Controller
 {
     public function index()
@@ -19,10 +29,20 @@ class UserController extends Controller
 ```
 
 ```
-✖ BND002 error  app/Http/Controllers/UserController.php:19
+$ npx nobypass check
+
+✖ BND001 error app/Http/Controllers/UserController.php:11  Forbidden direct dependency
+  controller depends directly on model: App\Models\User
+  expected: controller may depend directly on: service; approved route to model: controller → service → repository → model
+  fix:      Remove the dependency or route it through an allowed layer (service).
+
+✖ BND002 error app/Http/Controllers/UserController.php:11  Data access outside approved layer
   controller performs data access: Eloquent query User::where()
   expected: Data access only in repository, reached via controller → service → repository
   fix:      Move the query into the repository layer and call it through controller → service → repository.
+
+11 files analyzed · 2 new errors · 0 new warnings · 0 known (baseline/base)
+✖ FAIL — 2 blocking findings.
 ```
 
 ---
@@ -78,7 +98,7 @@ npx nobypass check --since origin/main   # fail only on what is new on this bran
 | Step | Command | What it does | Files it writes |
 |---|---|---|---|
 | 1 | `npm install -D …` | Adds the CLI to `devDependencies`. | `package.json`, lockfile |
-| 2 | `init` | Detects Laravel (`laravel/framework` in `composer.json`) or NestJS (`@nestjs/core` in `package.json`), reads PSR-4 or `tsconfig` paths, starts from a preset and drops layers you don't have. | `.nobypass.proposed.yml`, `.nobypass/discovery.txt` |
+| 2 | `init` | Detects the framework from your manifest (`composer.json`, `package.json`, `pyproject.toml`/`requirements.txt`, `pom.xml`/`build.gradle`), reads PSR-4 or `tsconfig` paths, starts from that framework's preset and drops layers you don't have. Monorepos get one project entry per app. | `.nobypass.proposed.yml`, `.nobypass/discovery.txt` |
 | 3 | `discovery show` | Prints the evidence: layers, how many files each covers, unclassified or ambiguous files, and every place existing code contradicts the proposal. | nothing |
 | 4 | `approve` | Validates the proposal, shows a summary and asks you to type `approve`. Refuses to run in CI. | `.nobypass.yml` |
 | 5 | `check` | Analyzes the code against the approved contract. Read-only. | nothing |
@@ -108,8 +128,8 @@ schema: 1
 projects:
   - id: api
     root: .
-    language: php                # php | typescript
-    framework: laravel           # laravel | nestjs | generic
+    language: php                # php | typescript | python | java
+    framework: laravel           # laravel | symfony | nestjs | express | fastify | nextjs | django | fastapi | spring | generic
     layers:                      # name: globs ("!glob" excludes)
       controller: ["app/Http/Controllers/**/*.php"]
       service:    ["app/Services/**/*.php"]
@@ -253,7 +273,7 @@ NoBypass proves that *detectable* violations are absent, which is narrower than 
 git clone https://github.com/lexyerresta/nobypass.git
 cd nobypass
 npm install          # also builds dist/
-npm test             # 185 tests: rule cases for every adapter and stack, fixtures, --since, discovery, CLI
+npm test             # 186 tests: rule cases for every adapter and stack, fixtures, --since, discovery, CLI
 node dist/cli/index.js check -C fixtures/laravel-violations
 ```
 
