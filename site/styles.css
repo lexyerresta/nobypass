@@ -203,6 +203,11 @@ code, pre { font-family: var(--mono); }
   --chute: #d8d2c4;
   --trunk: #7a5232;
   --leaf: #3f9d74;
+  --leaf-hi: #6cc39a;
+  /* The sky the scroll story turns to: evening in light, a late red horizon in dark (max 55% over the sky). */
+  --dusk-1: #8a9ad6;
+  --dusk-2: #f3a77f;
+  --dusk-3: #fbd2a4;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -222,6 +227,10 @@ code, pre { font-family: var(--mono); }
     --chute: #3a3d48;
     --trunk: #4a3424;
     --leaf: #2a6a50;
+    --leaf-hi: #3d8a68;
+    --dusk-1: #0b1322;
+    --dusk-2: #3b2347;
+    --dusk-3: #7a3b3b;
   }
 }
 :root[data-theme="dark"] {
@@ -241,6 +250,10 @@ code, pre { font-family: var(--mono); }
   --chute: #3a3d48;
   --trunk: #4a3424;
   --leaf: #2a6a50;
+  --leaf-hi: #3d8a68;
+  --dusk-1: #0b1322;
+  --dusk-2: #3b2347;
+  --dusk-3: #7a3b3b;
 }
 
 .hero { position: relative; isolation: isolate; overflow: hidden; padding-top: 40px; background: var(--sky-2); }
@@ -283,6 +296,33 @@ h1 {
 /* The building. Thick outlines on the key objects, flat fills, one hue per floor. */
 .flow { margin: 0 0 44px; }
 .flow-svg { display: block; width: 100%; height: auto; max-width: 400px; margin-left: auto; overflow: visible; }
+
+/* Revision 4: a full-screen hero with a scroll story, like the owner's portfolio.
+   --p (0..1, set by main.js) runs the story: the elevator, then the bypass and the stamp, while the sky
+   turns towards evening, the sun sets and the clouds drift. The statement then slides over as a sheet. */
+.dusk { opacity: calc(var(--p, 0) * 0.55); }
+.dusk-1 { stop-color: var(--dusk-1); }
+.dusk-2 { stop-color: var(--dusk-2); }
+.dusk-3 { stop-color: var(--dusk-3); }
+.sun { transform: translateY(calc(var(--p, 0) * 150px)); }
+.clouds { transform: translateX(calc(var(--p, 0) * -90px)); }
+.hero-runway, .scroll-hint { display: none; }
+@media (min-width: 900px) {
+  .hero { min-height: calc(100svh - 61px); display: flex; flex-direction: column; justify-content: flex-end; }
+  /* The building grows with the screen but always fits under the header with the buttons above it. */
+  .flow-svg { max-width: min(540px, calc((100svh - 61px - 200px) * 0.96)); }
+}
+html.motion .hero-stage.is-scrub .hero { position: sticky; top: 61px; }
+html.motion .hero-stage.is-scrub .hero-runway { display: block; height: 130svh; }
+html.motion .hero-stage.is-scrub .statement {
+  position: relative; z-index: 2; border-top: 0; border-radius: 28px 28px 0 0;
+  box-shadow: 0 -18px 40px -24px rgb(19 32 46 / 0.35);
+}
+html.motion .hero-stage.is-scrub .scroll-hint {
+  display: block; position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); margin: 0;
+  padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+  font: 600 13px var(--mono); color: var(--ink-2); opacity: clamp(0, calc(1 - var(--p, 0) * 6), 1); pointer-events: none;
+}
 .walls { fill: var(--wall); }
 .outline { stroke: var(--outline); stroke-width: 3; }
 .slab { --face: color-mix(in srgb, var(--h) var(--tint), var(--surface)); }
@@ -304,8 +344,12 @@ h1 {
 .rail { stroke: var(--outline); stroke-width: 2; }
 .car-box { fill: var(--surface); stroke: var(--outline); stroke-width: 2.5; }
 .parcel { fill: var(--ink); stroke: var(--outline); stroke-width: 1.5; transition: fill 0.2s ease; }
-.tree .trunk { fill: var(--trunk); }
-.tree .leaf { fill: var(--leaf); stroke: var(--outline); stroke-width: 2.5; }
+.tree .trunk { fill: var(--trunk); stroke: var(--outline); stroke-width: 2; stroke-linejoin: round; }
+.tree .branch { stroke: var(--trunk); stroke-width: 4; stroke-linecap: round; }
+.tree .crown-line circle { fill: var(--outline); }
+.tree .crown circle { fill: var(--leaf); }
+.tree .crown-hi { fill: var(--leaf-hi); }
+.tree .bush { fill: var(--leaf); stroke: var(--outline); stroke-width: 2; }
 .chute { stroke: var(--outline); stroke-width: 16; fill: none; stroke-linejoin: round; }
 .chute-in { stroke: var(--chute); stroke-width: 10; fill: none; stroke-linejoin: round; }
 .bypass { stroke: var(--err); stroke-width: 4; fill: none; stroke-dasharray: 7 5; }

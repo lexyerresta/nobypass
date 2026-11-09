@@ -167,8 +167,99 @@
       else if (await playOk()) await playBypass();
     };
 
-    flow.querySelectorAll('[data-run]').forEach((b) => b.addEventListener('click', () => start(b.dataset.run, true)));
-    if (motionOK()) {
+    // Revision 4: on wide, tall screens the hero is pinned and scrolling plays the story (--p, 0..1).
+    // 0 to 0.5: the elevator rides down and lights each floor. 0.58 to 0.85: User::where() takes the chute.
+    // From 0.86: BND002 stamps the barrier. The sky, sun and clouds follow --p in CSS.
+    const stage = document.getElementById('hero-stage');
+    const hero = stage && stage.querySelector('.hero');
+    const runway = stage && stage.querySelector('.hero-runway');
+    const wide = window.matchMedia('(min-width: 900px) and (min-height: 640px)');
+    const CHUTE = [[360, 140], [390, 140], [390, 450], [383, 450]];
+    const DEFAULT_STATUS = '<code>User::where()</code> in a controller returns the right data. It also skips two approved layers.';
+    const clamp = (v) => Math.min(1, Math.max(0, v));
+    const pointOn = (pts, p) => {
+      const lens = pts.slice(1).map((q, i) => Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]));
+      let d = p * lens.reduce((a, b) => a + b, 0);
+      let i = 0;
+      while (i < lens.length - 1 && d > lens[i]) d -= lens[i++];
+      const f = lens[i] ? Math.min(1, d / lens[i]) : 1;
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f];
+    };
+    let manual = false;
+    let manualAt = 0;
+    let stamped = null;
+    const scrubbing = () => Boolean(stage) && motionOK() && wide.matches;
+
+    const render = () => {
+      if (!scrubbing()) return;
+      const p = clamp(-stage.getBoundingClientRect().top / Math.max(1, runway.offsetHeight));
+      hero.style.setProperty('--p', p.toFixed(3));
+      if (manual) return;
+      // Elevator: the car moves from the roof through the four stops; a floor lights once the car reaches it.
+      const path = [ROOF, ...STOPS];
+      const legs = path.length - 1;
+      const pe = clamp(p / 0.5) * legs;
+      const seg = Math.min(legs - 1, Math.floor(pe));
+      carAt(path[seg] + (path[seg + 1] - path[seg]) * ease(clamp(pe - seg)));
+      slabs.forEach((s, i) => s.classList.toggle('is-lit', pe >= i + 0.98));
+      const lit = slabs.filter((s) => s.classList.contains('is-lit')).length;
+      parcel.style.fill = lit ? `var(${HUES[lit - 1]})` : '';
+      // Bypass: the call slides down the chute, revealing the red path behind it.
+      const pb = clamp((p - 0.58) / 0.27);
+      pktBad.classList.toggle('is-on', pb > 0);
+      const [x, y] = pointOn(CHUTE, pb);
+      pktBad.setAttribute('cx', x.toFixed(1));
+      pktBad.setAttribute('cy', y.toFixed(1));
+      setReveal(pb);
+      const isStamped = p >= 0.86;
+      if (isStamped !== stamped) {
+        stamped = isStamped;
+        flow.classList.toggle('is-stamped', isStamped);
+        flow.classList.toggle('is-idle', !isStamped);
+        pktBad.classList.toggle('is-shake', isStamped);
+        status.innerHTML = isStamped ? MSG.bypass : DEFAULT_STATUS;
+      }
+    };
+
+    let frame = 0;
+    const onScroll = () => {
+      // A button run keeps the stage until the reader scrolls on.
+      if (manual && Math.abs(window.scrollY - manualAt) > 60) {
+        manual = false;
+        run += 1;
+        stamped = null;
+      }
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; render(); });
+    };
+    const setup = () => {
+      const on = scrubbing();
+      if (stage) stage.classList.toggle('is-scrub', on);
+      if (on) {
+        run += 1;
+        reset();
+        stamped = null;
+        render();
+      } else if (hero) {
+        hero.style.removeProperty('--p');
+      }
+      return on;
+    };
+
+    flow.querySelectorAll('[data-run]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (scrubbing()) {
+          manual = true;
+          manualAt = window.scrollY;
+        }
+        start(b.dataset.run, true);
+      })
+    );
+    if (stage) {
+      window.addEventListener('scroll', onScroll, { passive: true });
+      wide.addEventListener('change', setup);
+    }
+    // Phones and short screens keep revision 3: the story plays once when the building is first seen.
+    if (!setup() && motionOK()) {
       reset();
       onceVisible(svg, () => setTimeout(() => start('both', false), 300), 0.4);
     }

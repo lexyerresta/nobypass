@@ -29,6 +29,21 @@ Design Read: an open-source developer-tool landing page for backend engineers an
 | Red line marker on flagged code | Functional: it ties a code line to the finding that names it. Clicking a finding highlights its line. |
 | Sections vary in composition | RHYTHM 3: a split hero, a full-width statement, a dark tabbed demo band, a contract split, two tables, and an asymmetric command list. |
 
+## Revision 4 (2026-11-09): a full-screen scroll story
+
+Owner direction: make the hero full like the portfolio (lexyerresta.nodezio.com), and fix the tree.
+
+| Decision | Reason |
+|---|---|
+| The hero fills the screen under the header on screens at least 900px wide | The owner asked for a full scene like the portfolio; the building grows with the screen height. |
+| On wide, tall screens the hero is pinned and scrolling plays the story (`--p`, 0 to 1, set in `main.js`) | The reader drives the run: the elevator lights each floor (to 0.5), `User::where()` slides down the chute (0.58 to 0.85), then BND002 stamps the barrier. Scrolling back rewinds it. |
+| The sky turns towards evening, the sun sets and the clouds drift with `--p` | The same gesture as the portfolio's sunset, so the sites read as a family. The evening layer stops at 55% so the dark text keeps AA contrast in light and the light text in dark. |
+| The statement slides over the pinned hero as a rounded sheet | It hands over from the picture to the problem in one movement, like the portfolio's Selected work sheet. |
+| A small "Scroll to send a request" hint fades out as soon as the story starts | The pinned hero would otherwise look stuck. |
+| The buttons still replay each run; the scroll story resumes once the reader scrolls on | Clicking should never fight the scroll position. |
+| Phones, short screens and reduced motion keep revision 3 | Pinning a stacked hero on a phone hides the building; reduced motion shows every end state at once. |
+| The tree is a tapered trunk with a branch and one leafy crown, plus a bush | The two circles on a stick read as a lollipop (owner feedback). The crown is an outline layer under a fill layer, so overlapping circles read as one shape. |
+
 ## Revision 3 (2026-11-09): colour, a drawn scene and motion
 
 Owner direction, translated from Indonesian: "Fix NoBypass too, I want animation in it as well; even though it is backend-focused, I want this website to be more interactive and have lots of colour." A follow-up asked for the page to feel like a sibling of lexyerresta.nodezio.com, nodezio.com and DomainScope: a drawn SVG scene as the hero, with its own concept.

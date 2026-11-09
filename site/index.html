@@ -48,6 +48,9 @@
   </header>
 
   <main id="main">
+    <!-- Revision 4: the hero fills the screen and stays put while scrolling plays the story (main.js, --p),
+         then the statement slides over it like a sheet. -->
+    <div class="hero-stage" id="hero-stage">
     <section class="hero" aria-labelledby="hero-title">
       <svg class="sky" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
         <defs>
@@ -56,8 +59,14 @@
             <stop class="sky-2" offset="0.6"/>
             <stop class="sky-3" offset="1"/>
           </linearGradient>
+          <linearGradient id="dusk-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop class="dusk-1" offset="0"/>
+            <stop class="dusk-2" offset="0.65"/>
+            <stop class="dusk-3" offset="1"/>
+          </linearGradient>
         </defs>
         <rect width="1440" height="600" fill="url(#sky-grad)"/>
+        <rect class="dusk" width="1440" height="600" fill="url(#dusk-grad)"/>
         <circle class="sun" cx="1180" cy="120" r="46"/>
         <g class="clouds">
           <g class="cloud"><path d="M120 150h150a28 28 0 0 0-30-34 40 40 0 0 0-74-8 30 30 0 0 0-46 42z"/></g>
@@ -96,10 +105,19 @@
               </mask>
             </defs>
 
+            <!-- A street tree: tapered trunk with a branch, one leafy crown (an outline layer under a fill layer,
+                 so overlapping circles read as one silhouette) and a small bush at the foot of the wall. -->
             <g class="tree">
-              <rect class="trunk" x="12" y="440" width="8" height="68"/>
-              <circle class="leaf" cx="16" cy="428" r="20"/>
-              <circle class="leaf leaf-2" cx="2" cy="452" r="12"/>
+              <path class="trunk" d="M9 508L12 440H17L20 508Z"/>
+              <path class="branch" d="M16 462L26 448"/>
+              <g class="crown-line">
+                <circle cx="14" cy="402" r="20"/><circle cx="-1" cy="420" r="16"/><circle cx="29" cy="420" r="16"/><circle cx="14" cy="430" r="18"/>
+              </g>
+              <g class="crown">
+                <circle cx="14" cy="402" r="17"/><circle cx="-1" cy="420" r="13"/><circle cx="29" cy="420" r="13"/><circle cx="14" cy="430" r="15"/>
+              </g>
+              <circle class="crown-hi" cx="8" cy="398" r="7"/>
+              <path class="bush" d="M22 508a9 9 0 0 1 9-11a8 8 0 0 1 9 4v7Z"/>
             </g>
 
             <g class="roof">
@@ -165,7 +183,11 @@
           </svg>
         </figure>
       </div>
+      <p class="scroll-hint" aria-hidden="true">Scroll to send a request</p>
     </section>
+
+    <!-- Scroll room while the hero is pinned; only shown when the scroll story is on. -->
+    <div class="hero-runway" aria-hidden="true"></div>
 
     <section class="statement" aria-labelledby="statement-title">
       <div class="wrap statement-inner">
@@ -173,6 +195,7 @@
         <p>Neither tool knows which layer may call which. A few agent sessions later, controllers talk to the ORM and the service layer is a pass-through. NoBypass checks the one thing they skip: the direction of every dependency, against a contract your team approved.</p>
       </div>
     </section>
+    </div>
 
     <section id="demo" class="demo" aria-labelledby="demo-title">
       <div class="wrap">
