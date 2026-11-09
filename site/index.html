@@ -14,6 +14,10 @@
   <link rel="preload" href="fonts/plex-sans-700.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
   <script>
+    document.documentElement.classList.add('js');
+    try {
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion');
+    } catch (e) {}
     try {
       var t = localStorage.getItem('nobypass-theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
@@ -44,42 +48,128 @@
   </header>
 
   <main id="main">
-    <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <h1 id="hero-title">Your AI said it followed your architecture. <span class="accent">Check.</span></h1>
-        <p class="lede">NoBypass fails the pull request when generated code works but skips the layers your team approved: a query in a controller, a repository injected where only a service belongs, a <code>catch</code> that swallows everything.</p>
-        <div class="actions">
-          <a class="btn btn-primary" href="#start">Run it on your repo</a>
-          <a class="btn" href="https://github.com/lexyerresta/nobypass">Read the source on GitHub</a>
-        </div>
-        <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account.</p>
-        <p class="hero-stacks"><span class="hs-label">Works with</span> Laravel · Symfony · NestJS · Express · Fastify · Next.js · Django · FastAPI · Spring Boot</p>
-      </div>
+    <section class="hero" aria-labelledby="hero-title">
+      <svg class="sky" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="sky-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop class="sky-1" offset="0"/>
+            <stop class="sky-2" offset="0.6"/>
+            <stop class="sky-3" offset="1"/>
+          </linearGradient>
+        </defs>
+        <rect width="1440" height="600" fill="url(#sky-grad)"/>
+        <circle class="sun" cx="1180" cy="120" r="46"/>
+        <g class="clouds">
+          <g class="cloud"><path d="M120 150h150a28 28 0 0 0-30-34 40 40 0 0 0-74-8 30 30 0 0 0-46 42z"/></g>
+          <g class="cloud cloud-2"><path d="M760 90h120a22 22 0 0 0-24-27 32 32 0 0 0-60-6 24 24 0 0 0-36 33z"/></g>
+        </g>
+        <path class="skyline" d="M0 600V550h70v-20h60v30h50V535h80v65zM300 600V525h40v-15h50v15h40v75zM520 600V545h90v-25h70v80zM760 600V535h60v-30h40v30h50v65zM980 600V550h110V520h70v80zM1200 600V540h60v-20h80v80zM1360 600V550h80v50z"/>
+        <g class="lit">
+          <rect x="836" y="516" width="8" height="10"/><rect x="1016" y="540" width="8" height="10"/><rect x="1124" y="536" width="8" height="10"/><rect x="1292" y="536" width="8" height="10"/><rect x="1380" y="560" width="8" height="10"/>
+        </g>
+      </svg>
 
-      <figure class="diagram">
-        <svg viewBox="0 0 340 240" role="img" aria-labelledby="diagram-title diagram-desc">
-          <title id="diagram-title">Approved layer path and a blocked bypass</title>
-          <desc id="diagram-desc">Four stacked layers, controller, service, repository and model, connected top to bottom. A red line goes straight from controller to model, skipping two layers, and is marked BND002 blocked.</desc>
-          <g class="d-layer"><rect x="10" y="8" width="210" height="40" rx="4"/><text x="26" y="33">controller</text></g>
-          <g class="d-layer"><rect x="10" y="68" width="210" height="40" rx="4"/><text x="26" y="93">service</text></g>
-          <g class="d-layer"><rect x="10" y="128" width="210" height="40" rx="4"/><text x="26" y="153">repository</text></g>
-          <g class="d-layer d-model"><rect x="10" y="188" width="210" height="40" rx="4"/><text x="26" y="213">model</text></g>
-          <path class="d-edge" d="M115 48v20M115 108v20M115 168v20"/>
-          <path class="d-bypass" d="M220 28h52v180h-52"/>
-          <path class="d-tick" d="M228 202l-8 6 8 6"/>
-          <g class="d-stamp">
-            <rect x="236" y="98" width="98" height="40" rx="4"/>
-            <text x="285" y="115" text-anchor="middle">BND002</text>
-            <text x="285" y="130" text-anchor="middle" class="d-small">blocked</text>
-          </g>
-        </svg>
-        <figcaption><code>User::where()</code> in a controller returns the right data. It also skips two approved layers.</figcaption>
-      </figure>
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <h1 id="hero-title">Your AI said it followed your architecture. <span class="accent">Check.</span></h1>
+          <p class="lede">NoBypass fails the pull request when generated code works but skips the layers your team approved: a query in a controller, a repository injected where only a service belongs, a <code>catch</code> that swallows everything.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#start">Run it on your repo</a>
+            <a class="btn" href="https://github.com/lexyerresta/nobypass">Read the source on GitHub</a>
+          </div>
+          <p class="facts">MIT licensed. Static analysis that runs offline. No LLM, no API key, no account.</p>
+          <p class="hero-stacks"><span class="hs-label">Works with</span> Laravel · Symfony · NestJS · Express · Fastify · Next.js · Django · FastAPI · Spring Boot</p>
+        </div>
+
+        <figure class="flow" id="flow">
+          <div class="flow-ctl">
+            <button type="button" class="flow-btn" data-run="ok">Send a request</button>
+            <button type="button" class="flow-btn flow-btn-bad" data-run="bypass">Try the bypass</button>
+          </div>
+          <figcaption class="flow-status" id="flow-status" aria-live="polite"><code>User::where()</code> in a controller returns the right data. It also skips two approved layers.</figcaption>
+          <svg class="flow-svg" viewBox="-10 0 490 508" role="img" aria-labelledby="flow-title flow-desc">
+            <title id="flow-title">The app as a building: a request rides the elevator through every floor, and a shortcut chute is blocked</title>
+            <desc id="flow-desc">A building with four floors from the Laravel fixture, top to bottom: controller (UserController::index()), service (UserService::listActive()), repository (EloquentUserRepository::active()) and model (User). A request for GET /users arrives on the roof and the elevator carries it down, stopping on each floor. Outside the building, a chute runs from the controller floor straight down to the model floor. A call, User::where() written in the controller, slides down it and is stopped at a red barrier with the sign BND002 blocked.</desc>
+            <defs>
+              <mask id="bypass-mask" maskUnits="userSpaceOnUse" x="-10" y="0" width="490" height="508">
+                <path id="bypass-reveal" d="M360 140H390V450H376" stroke="#fff" stroke-width="12" fill="none"/>
+              </mask>
+            </defs>
+
+            <g class="tree">
+              <rect class="trunk" x="12" y="440" width="8" height="68"/>
+              <circle class="leaf" cx="16" cy="428" r="20"/>
+              <circle class="leaf leaf-2" cx="2" cy="452" r="12"/>
+            </g>
+
+            <g class="roof">
+              <path class="post" d="M96 70V46M184 70V46"/>
+              <rect class="sign" x="70" y="16" width="140" height="32" rx="4"/>
+              <text class="sign-text" x="140" y="37" text-anchor="middle">GET /users</text>
+              <rect class="housing" x="296" y="30" width="52" height="42" rx="3"/>
+              <rect class="parapet" x="34" y="70" width="332" height="14" rx="2"/>
+            </g>
+
+            <rect class="walls" x="40" y="84" width="320" height="424"/>
+            <g class="slab s-ctrl" data-layer="controller">
+              <rect class="slab-face" x="46" y="84" width="254" height="96"/>
+              <rect class="slab-edge" x="40" y="180" width="320" height="10"/>
+              <text class="slab-name" x="58" y="112">controller</text>
+              <text class="slab-call" x="58" y="132">UserController::index()</text>
+              <g class="prop"><rect x="150" y="152" width="96" height="22" rx="2"/><rect x="164" y="144" width="20" height="8"/></g>
+            </g>
+            <g class="slab s-svc" data-layer="service">
+              <rect class="slab-face" x="46" y="190" width="254" height="96"/>
+              <rect class="slab-edge" x="40" y="286" width="320" height="10"/>
+              <text class="slab-name" x="58" y="218">service</text>
+              <text class="slab-call" x="58" y="238">UserService::listActive()</text>
+              <g class="prop"><rect x="70" y="264" width="60" height="16" rx="2"/><rect x="88" y="248" width="24" height="16" rx="2"/><rect x="170" y="264" width="60" height="16" rx="2"/><rect x="188" y="248" width="24" height="16" rx="2"/></g>
+            </g>
+            <g class="slab s-repo" data-layer="repository">
+              <rect class="slab-face" x="46" y="296" width="254" height="96"/>
+              <rect class="slab-edge" x="40" y="392" width="320" height="10"/>
+              <text class="slab-name" x="58" y="324">repository</text>
+              <text class="slab-call" x="58" y="344">EloquentUserRepository::active()</text>
+              <g class="prop"><rect x="70" y="354" width="34" height="38" rx="2"/><rect x="110" y="354" width="34" height="38" rx="2"/><rect x="150" y="354" width="34" height="38" rx="2"/><path class="prop-line" d="M70 367h114M70 380h114"/></g>
+            </g>
+            <g class="slab s-data" data-layer="model">
+              <rect class="slab-face" x="46" y="402" width="254" height="96"/>
+              <rect class="slab-edge" x="40" y="498" width="320" height="10"/>
+              <text class="slab-name" x="58" y="430">model</text>
+              <text class="slab-call" x="58" y="450">User</text>
+              <g class="prop"><path d="M150 464a22 7 0 0 1 44 0v26a22 7 0 0 1-44 0z"/><path d="M204 464a22 7 0 0 1 44 0v26a22 7 0 0 1-44 0z"/><path class="prop-line" d="M150 464a22 7 0 0 0 44 0M204 464a22 7 0 0 0 44 0"/></g>
+            </g>
+
+            <rect class="shaft" x="300" y="84" width="44" height="414"/>
+            <path class="rail" d="M304 32V498M340 32V498"/>
+            <rect class="outline" x="40" y="84" width="320" height="424" fill="none"/>
+            <g class="car" transform="translate(0 132)">
+              <rect class="car-box" x="306" y="0" width="32" height="40" rx="3"/>
+              <rect class="parcel" x="314" y="18" width="16" height="14" rx="2"/>
+            </g>
+
+            <path class="chute" d="M360 140H390V450H366"/>
+            <path class="chute-in" d="M360 140H390V450H366"/>
+            <path class="bypass" d="M360 140H390V450H376" mask="url(#bypass-mask)"/>
+            <text class="f-tag-bad" x="476" y="122" text-anchor="end">User::where()</text>
+            <path class="barrier" d="M372 436v28"/>
+            <g class="stamp-g">
+              <path class="hanger" d="M397 236h41v12"/>
+              <g transform="rotate(-5 438 272)">
+                <rect x="402" y="248" width="72" height="48" rx="4"/>
+                <text x="438" y="269" text-anchor="middle">BND002</text>
+                <text x="438" y="286" text-anchor="middle" class="stamp-small">blocked</text>
+              </g>
+            </g>
+            <circle class="pkt pkt-bad" r="7" cx="360" cy="140"/>
+          </svg>
+        </figure>
+      </div>
     </section>
 
     <section class="statement" aria-labelledby="statement-title">
       <div class="wrap statement-inner">
-        <h2 id="statement-title">Tests pass. The linter passes. <span class="strike">The controller still queries the database.</span></h2>
+        <h2 id="statement-title">Tests pass. The linter passes. <span class="strike">The <span class="ly ly-ctrl">controller</span> still queries the database. <span class="stamp" aria-hidden="true">BND002</span></span></h2>
         <p>Neither tool knows which layer may call which. A few agent sessions later, controllers talk to the ORM and the service layer is a pass-through. NoBypass checks the one thing they skip: the direction of every dependency, against a contract your team approved.</p>
       </div>
     </section>
@@ -121,29 +211,39 @@
           <h2 id="contract-title">The contract is a file your team reviews</h2>
           <p><code>nobypass init</code> reads <code>composer.json</code>, PSR-4 mappings, <code>package.json</code> and <code>tsconfig</code> paths, then writes a proposal. It starts from a preset and never treats the most common pattern in your code as correct.</p>
           <p>Nothing is enforced until a person runs <code>nobypass approve</code> in a terminal. CI and agents cannot approve it.</p>
-          <p class="path" aria-label="Approved path: controller, service, repository, model">
-            <span>controller</span><span>service</span><span>repository</span><span>model</span>
-          </p>
           <p><code>allowed_direct</code> is about direct dependencies only. A controller reaching the model through every layer above is fine. A controller importing the model, or reaching a repository through a Laravel facade, is not.</p>
         </div>
-<pre class="code yaml" tabindex="0" aria-label=".nobypass.yml excerpt"><code><span class="y-k">layers:</span>
-  <span class="y-k">controller:</span> [<span class="y-s">"app/Http/Controllers/**/*.php"</span>]
-  <span class="y-k">service:</span>    [<span class="y-s">"app/Services/**/*.php"</span>]
-  <span class="y-k">repository:</span> [<span class="y-s">"app/Repositories/**/*.php"</span>]
-  <span class="y-k">model:</span>      [<span class="y-s">"app/Models/**/*.php"</span>]
+
+        <div class="contract-file">
+          <div class="explorer" id="explorer">
+            <h3 id="explorer-title">Pick a layer to see what it may depend on</h3>
+            <div class="ex-rows" role="group" aria-labelledby="explorer-title">
+              <div class="ex-row" data-layer="controller"><button type="button" class="ex-btn s-ctrl" data-layer="controller" aria-pressed="true">controller</button><span class="ex-verdict"></span></div>
+              <div class="ex-row" data-layer="service"><button type="button" class="ex-btn s-svc" data-layer="service" aria-pressed="false">service</button><span class="ex-verdict"></span></div>
+              <div class="ex-row" data-layer="repository"><button type="button" class="ex-btn s-repo" data-layer="repository" aria-pressed="false">repository</button><span class="ex-verdict"></span></div>
+              <div class="ex-row" data-layer="model"><button type="button" class="ex-btn s-data" data-layer="model" aria-pressed="false">model</button><span class="ex-verdict"></span></div>
+            </div>
+            <p class="ex-out" id="explorer-out" aria-live="polite">controller may depend directly on service only. A dependency on repository is BND003 and one on model is BND001. A query written here is BND002.</p>
+          </div>
+<pre class="code yaml" id="contract-yaml" tabindex="0" aria-label=".nobypass.yml excerpt"><code><span class="y-k">layers:</span>
+  <span class="yl" data-layer="controller"><span class="ly ly-ctrl">controller:</span> [<span class="y-s">"app/Http/Controllers/**/*.php"</span>]</span>
+  <span class="yl" data-layer="service"><span class="ly ly-svc">service:</span>    [<span class="y-s">"app/Services/**/*.php"</span>]</span>
+  <span class="yl" data-layer="repository"><span class="ly ly-repo">repository:</span> [<span class="y-s">"app/Repositories/**/*.php"</span>]</span>
+  <span class="yl" data-layer="model"><span class="ly ly-data">model:</span>      [<span class="y-s">"app/Models/**/*.php"</span>]</span>
 <span class="y-k">dependencies:</span>
   <span class="y-k">allowed_direct:</span>
-    <span class="y-k">controller:</span> [service]
-    <span class="y-k">service:</span>    [repository]
-    <span class="y-k">repository:</span> [model]
-    <span class="y-k">model:</span>      []
+    <span class="yl" data-layer="controller"><span class="ly ly-ctrl">controller:</span> [<span class="ly ly-svc">service</span>]</span>
+    <span class="yl" data-layer="service"><span class="ly ly-svc">service:</span>    [<span class="ly ly-repo">repository</span>]</span>
+    <span class="yl" data-layer="repository"><span class="ly ly-repo">repository:</span> [<span class="ly ly-data">model</span>]</span>
+    <span class="yl" data-layer="model"><span class="ly ly-data">model:</span>      []</span>
 <span class="y-k">rules:</span>
   <span class="y-k">direct_orm_access:</span>
-    <span class="y-k">deny_in:</span>  [controller, service]
-    <span class="y-k">allow_in:</span> [repository]
+    <span class="y-k">deny_in:</span>  [<span class="ly ly-ctrl">controller</span>, <span class="ly ly-svc">service</span>]
+    <span class="y-k">allow_in:</span> [<span class="ly ly-repo">repository</span>]
   <span class="y-k">catch_policy:</span>
-    <span class="y-k">discourage_in:</span> [service, repository]
+    <span class="y-k">discourage_in:</span> [<span class="ly ly-svc">service</span>, <span class="ly ly-repo">repository</span>]
     <span class="y-k">severity:</span> warning</code></pre>
+        </div>
       </div>
     </section>
 
@@ -173,7 +273,7 @@
     <section id="stacks" class="stacks wrap" aria-labelledby="stacks-title">
       <div class="head">
         <h2 id="stacks-title">Nine stacks, one contract format</h2>
-        <p><code>nobypass init</code> detects the framework from your manifest and starts from a preset built on a documented public pattern. Every preset is a plain YAML file you can edit before approving.</p>
+        <p><code>nobypass init</code> detects the framework from your manifest and starts from a preset built on a documented public pattern. Every preset is a plain YAML file you can edit before approving. Layer names are coloured by their role, the same four colours as the diagram at the top.</p>
       </div>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Supported stacks">
         <table>
@@ -181,14 +281,14 @@
             <tr><th scope="col">Stack</th><th scope="col">Default layering</th><th scope="col">Pattern it follows</th></tr>
           </thead>
           <tbody>
-            <tr><td>Laravel</td><td class="mono">controller → service → repository → model</td><td>Service Layer and Repository (Fowler, PoEAA). Facades are resolved to the class behind them.</td></tr>
-            <tr><td>Symfony</td><td class="mono">controller → service → repository → entity</td><td>Symfony best practices, Doctrine repositories</td></tr>
-            <tr><td>NestJS</td><td class="mono">controller → service → repository → persistence</td><td>Nest providers, optional ports and adapters</td></tr>
-            <tr><td>Express, Fastify</td><td class="mono">route → controller → service → repository</td><td>Controller, service, repository for Node.js APIs</td></tr>
-            <tr><td>Next.js</td><td class="mono">UI → data access layer → database</td><td>Next.js docs, Data Security: Data Access Layer</td></tr>
-            <tr><td>Django</td><td class="mono">views → services / selectors → models</td><td>HackSoftware Django Styleguide</td></tr>
-            <tr><td>FastAPI</td><td class="mono">routers → services → repositories → models</td><td>Router, service, repository with SQLAlchemy sessions</td></tr>
-            <tr><td>Spring Boot</td><td class="mono">controller → service → repository → entity</td><td>Spring stereotypes and Spring Data</td></tr>
+            <tr><td>Laravel</td><td class="mono"><span class="ly ly-ctrl">controller</span> → <span class="ly ly-svc">service</span> → <span class="ly ly-repo">repository</span> → <span class="ly ly-data">model</span></td><td>Service Layer and Repository (Fowler, PoEAA). Facades are resolved to the class behind them.</td></tr>
+            <tr><td>Symfony</td><td class="mono"><span class="ly ly-ctrl">controller</span> → <span class="ly ly-svc">service</span> → <span class="ly ly-repo">repository</span> → <span class="ly ly-data">entity</span></td><td>Symfony best practices, Doctrine repositories</td></tr>
+            <tr><td>NestJS</td><td class="mono"><span class="ly ly-ctrl">controller</span> → <span class="ly ly-svc">service</span> → <span class="ly ly-repo">repository</span> → <span class="ly ly-data">persistence</span></td><td>Nest providers, optional ports and adapters</td></tr>
+            <tr><td>Express, Fastify</td><td class="mono"><span class="ly ly-ctrl">route</span> → <span class="ly ly-ctrl">controller</span> → <span class="ly ly-svc">service</span> → <span class="ly ly-repo">repository</span></td><td>Controller, service, repository for Node.js APIs</td></tr>
+            <tr><td>Next.js</td><td class="mono"><span class="ly ly-ctrl">UI</span> → <span class="ly ly-svc">data access layer</span> → <span class="ly ly-data">database</span></td><td>Next.js docs, Data Security: Data Access Layer</td></tr>
+            <tr><td>Django</td><td class="mono"><span class="ly ly-ctrl">views</span> → <span class="ly ly-svc">services</span> / <span class="ly ly-svc">selectors</span> → <span class="ly ly-data">models</span></td><td>HackSoftware Django Styleguide</td></tr>
+            <tr><td>FastAPI</td><td class="mono"><span class="ly ly-ctrl">routers</span> → <span class="ly ly-svc">services</span> → <span class="ly ly-repo">repositories</span> → <span class="ly ly-data">models</span></td><td>Router, service, repository with SQLAlchemy sessions</td></tr>
+            <tr><td>Spring Boot</td><td class="mono"><span class="ly ly-ctrl">controller</span> → <span class="ly ly-svc">service</span> → <span class="ly ly-repo">repository</span> → <span class="ly ly-data">entity</span></td><td>Spring stereotypes and Spring Data</td></tr>
           </tbody>
         </table>
       </div>

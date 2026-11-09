@@ -1,4 +1,4 @@
-/* Direction and the reason for each decision: see DESIGN.md. Dial: ENERGY 1 / RHYTHM 2 / MOTION 1. */
+/* Direction and the reason for each decision: see DESIGN.md (revision 3). Dial: ENERGY 3 / RHYTHM 3 / MOTION 3. */
 
 @font-face { font-family: "Plex Sans"; src: url("fonts/plex-sans-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Plex Sans"; src: url("fonts/plex-sans-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
@@ -6,7 +6,17 @@
 @font-face { font-family: "Plex Mono"; src: url("fonts/plex-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Plex Mono"; src: url("fonts/plex-mono-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
 
-/* Light theme: warm paper and ink. All text tokens are >= 4.5:1 on bg, surface and sunk. */
+/*
+  Colour system. Every hue means something:
+  --l-ctrl  entry layer (controller, route, router, view, UI)       blue
+  --l-svc   service layer (service, selectors, data access layer)    violet
+  --l-repo  repository layer                                         teal
+  --l-data  data layer (model, entity, persistence, database)        gold
+  --err     a violation. The only red on the page.
+  --ok      PASS / an allowed dependency
+  --accent  the brand and the primary action (orange)
+  Light values are >= 4.5:1 on --bg, --surface and the layer tints.
+*/
 :root {
   color-scheme: light;
   --bg: #f5f3ee;
@@ -20,10 +30,16 @@
   --accent: #b4460b;
   --on-accent: #ffffff;
   --err: #b42318;
-  --ok: #1d6f31;
-  --warn: #8a5300;
-  --code-k: #9a3a0b;
-  --code-s: #1d6f31;
+  --ok: #256a1e;
+  --warn: #9a4800;
+  --code-k: #45443b;
+  --code-s: #256a1e;
+  --l-ctrl: #2348c0;
+  --l-svc: #7034b5;
+  --l-repo: #006b64;
+  --l-data: #765300;
+  --tint: 13%;
+  --edge-mix: 70%;
   --sans: "Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Plex Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
   --r-sm: 4px;
@@ -44,10 +60,16 @@
     --accent: #ff8a3d;
     --on-accent: #1a0d03;
     --err: #ff7b72;
-    --ok: #7ee08f;
-    --warn: #e8b04b;
-    --code-k: #ffa266;
-    --code-s: #8fdc9e;
+    --ok: #9be07f;
+    --warn: #ffa05a;
+    --code-k: #c4c2b7;
+    --code-s: #9be07f;
+    --l-ctrl: #8fadff;
+    --l-svc: #c9a3ff;
+    --l-repo: #4fd0c0;
+    --l-data: #efc04f;
+    --tint: 17%;
+    --edge-mix: 45%;
   }
 }
 
@@ -64,11 +86,24 @@
   --accent: #ff8a3d;
   --on-accent: #1a0d03;
   --err: #ff7b72;
-  --ok: #7ee08f;
-  --warn: #e8b04b;
-  --code-k: #ffa266;
-  --code-s: #8fdc9e;
+  --ok: #9be07f;
+  --warn: #ffa05a;
+  --code-k: #c4c2b7;
+  --code-s: #9be07f;
+  --l-ctrl: #8fadff;
+  --l-svc: #c9a3ff;
+  --l-repo: #4fd0c0;
+  --l-data: #efc04f;
+  --tint: 17%;
+  --edge-mix: 45%;
 }
+
+/* One hue variable per layer role, so components can say "my layer colour" with --h. */
+.s-ctrl, .ly-ctrl { --h: var(--l-ctrl); }
+.s-svc, .ly-svc { --h: var(--l-svc); }
+.s-repo, .ly-repo { --h: var(--l-repo); }
+.s-data, .ly-data { --h: var(--l-data); }
+.ly { color: var(--h); font-weight: 600; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
@@ -148,17 +183,92 @@ code, pre { font-family: var(--mono); }
 .btn-primary:hover { border-color: var(--ink); }
 .btn-primary:active { background: var(--accent); box-shadow: inset 0 0 0 2px var(--ink); }
 
-/* Hero: split layout. The H1 is the focal point. */
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 64px;
-  align-items: center;
-  padding: 96px 0 88px;
+/* Hero: a drawn street scene. The sky, skyline and street run edge to edge; the app stands on
+   the street as a building with one floor per layer. The H1 is the focal point; the building is the
+   identity motif. Scene colours have light (morning) and dark (night) values. */
+:root {
+  --sky-1: #a8d8ef;
+  --sky-2: #d6edf6;
+  --sky-3: #fbe7c8;
+  --sun: #ffcf6e;
+  --cloud: #ffffff;
+  --skyline: #b9d0da;
+  --lit: transparent;
+  --pavement: #cfc6b2;
+  --road: #4a4d52;
+  --lane: #e9e2d2;
+  --outline: #13202e;
+  --wall: #f1e4cc;
+  --shaft: #e1d6bf;
+  --chute: #d8d2c4;
+  --trunk: #7a5232;
+  --leaf: #3f9d74;
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sky-1: #0b1322;
+    --sky-2: #16203a;
+    --sky-3: #2c2944;
+    --sun: #efe4c4;
+    --cloud: #2a3350;
+    --skyline: #1d2539;
+    --lit: #f2c66d;
+    --pavement: #2c2a25;
+    --road: #18191c;
+    --lane: #5a574d;
+    --outline: #05070b;
+    --wall: #2a2e3b;
+    --shaft: #1d2029;
+    --chute: #3a3d48;
+    --trunk: #4a3424;
+    --leaf: #2a6a50;
+  }
+}
+:root[data-theme="dark"] {
+  --sky-1: #0b1322;
+  --sky-2: #16203a;
+  --sky-3: #2c2944;
+  --sun: #efe4c4;
+  --cloud: #2a3350;
+  --skyline: #1d2539;
+  --lit: #f2c66d;
+  --pavement: #2c2a25;
+  --road: #18191c;
+  --lane: #5a574d;
+  --outline: #05070b;
+  --wall: #2a2e3b;
+  --shaft: #1d2029;
+  --chute: #3a3d48;
+  --trunk: #4a3424;
+  --leaf: #2a6a50;
+}
+
+.hero { position: relative; isolation: isolate; overflow: hidden; padding-top: 40px; background: var(--sky-2); }
+.hero::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 44px; z-index: -1;
+  background:
+    repeating-linear-gradient(90deg, var(--lane) 0 28px, transparent 28px 60px) 0 27px / 100% 3px no-repeat,
+    linear-gradient(var(--pavement) 0 10px, var(--road) 10px);
+}
+.sky { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 44px); z-index: -2; display: block; }
+.sky-1 { stop-color: var(--sky-1); }
+.sky-2 { stop-color: var(--sky-2); }
+.sky-3 { stop-color: var(--sky-3); }
+.sun { fill: var(--sun); }
+.cloud { fill: var(--cloud); opacity: 0.85; }
+.skyline { fill: var(--skyline); }
+.lit rect { fill: var(--lit); }
+.hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: 48px;
+  align-items: end;
+}
+.hero-copy { align-self: center; padding-bottom: 72px; }
+.hero { --ink-3: var(--ink-2); }
 h1 {
   margin: 0;
-  font-size: clamp(2.6rem, 6.4vw, 5.2rem);
+  font-size: clamp(2.5rem, 5.6vw, 4.5rem);
   line-height: 1.02;
   letter-spacing: -0.03em;
   font-weight: 700;
@@ -166,33 +276,103 @@ h1 {
 .accent { color: var(--accent); }
 .lede { margin: 28px 0 32px; font-size: 1.2rem; line-height: 1.55; color: var(--ink-2); max-width: 34em; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.facts { margin: 20px 0 0; font-size: 15px; color: var(--ink-3); }
+.facts { margin: 20px 0 0; font-size: 15px; color: var(--ink-2); }
 .hero-stacks { margin: 14px 0 0; font: 400 13.5px/1.7 var(--mono); color: var(--ink-2); }
 .hero-stacks .hs-label { font-family: var(--sans); font-weight: 600; color: var(--ink); margin-right: 6px; }
 
-.diagram { margin: 0; }
-.diagram svg { display: block; width: 100%; height: auto; max-width: 420px; }
-.d-layer rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.25; }
-.d-model rect { fill: var(--sunk); }
-.d-layer text { fill: var(--ink); font: 400 15px var(--mono); }
-.d-edge { stroke: var(--line-strong); stroke-width: 1.5; fill: none; }
-.d-bypass { stroke: var(--err); stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
-.d-tick { stroke: var(--err); stroke-width: 2; fill: none; }
-.d-stamp rect { fill: var(--bg); stroke: var(--err); stroke-width: 1.5; }
-.d-stamp text { fill: var(--err); font: 600 14px var(--mono); }
-.d-stamp .d-small { font: 400 12px var(--mono); }
-.diagram figcaption { margin-top: 14px; font-size: 15px; color: var(--ink-3); max-width: 28em; }
+/* The building. Thick outlines on the key objects, flat fills, one hue per floor. */
+.flow { margin: 0 0 44px; }
+.flow-svg { display: block; width: 100%; height: auto; max-width: 400px; margin-left: auto; overflow: visible; }
+.walls { fill: var(--wall); }
+.outline { stroke: var(--outline); stroke-width: 3; }
+.slab { --face: color-mix(in srgb, var(--h) var(--tint), var(--surface)); }
+.slab-face { fill: var(--face); stroke: var(--h); stroke-width: 0; transition: stroke-width 0.2s ease; }
+.slab-edge { fill: color-mix(in srgb, var(--h) var(--edge-mix), var(--bg)); stroke: var(--outline); stroke-width: 1.5; }
+.slab-name { fill: var(--h); font: 600 16px var(--mono); }
+.slab-call { fill: var(--ink-2); font: 400 12px var(--mono); }
+.prop rect, .prop path { fill: color-mix(in srgb, var(--h) 30%, var(--surface)); stroke: var(--outline); stroke-width: 1.5; }
+.prop .prop-line { fill: none; }
+/* A lit floor gets a thick border in its hue; the fill stays the same so the label keeps its contrast. */
+.slab.is-lit .slab-face { stroke-width: 5; }
+.slab.is-lit .slab-call { fill: var(--ink); }
+.roof .post { stroke: var(--outline); stroke-width: 3; }
+.roof .sign { fill: var(--surface); stroke: var(--outline); stroke-width: 2.5; }
+.roof .sign-text { fill: var(--ink); font: 600 15px var(--mono); }
+.roof .housing { fill: var(--wall); stroke: var(--outline); stroke-width: 2.5; }
+.roof .parapet { fill: var(--outline); }
+.shaft { fill: var(--shaft); }
+.rail { stroke: var(--outline); stroke-width: 2; }
+.car-box { fill: var(--surface); stroke: var(--outline); stroke-width: 2.5; }
+.parcel { fill: var(--ink); stroke: var(--outline); stroke-width: 1.5; transition: fill 0.2s ease; }
+.tree .trunk { fill: var(--trunk); }
+.tree .leaf { fill: var(--leaf); stroke: var(--outline); stroke-width: 2.5; }
+.chute { stroke: var(--outline); stroke-width: 16; fill: none; stroke-linejoin: round; }
+.chute-in { stroke: var(--chute); stroke-width: 10; fill: none; stroke-linejoin: round; }
+.bypass { stroke: var(--err); stroke-width: 4; fill: none; stroke-dasharray: 7 5; }
+.f-tag-bad { fill: var(--err); font: 600 12px var(--mono); }
+.barrier { stroke: var(--err); stroke-width: 7; stroke-linecap: round; }
+.hanger { stroke: var(--outline); stroke-width: 2; fill: none; }
+.stamp-g rect { fill: var(--surface); stroke: var(--err); stroke-width: 2.5; }
+.stamp-g text { fill: var(--err); font: 600 15px var(--mono); }
+.stamp-g .stamp-small { font: 400 12px var(--mono); }
+.stamp-g { transform-box: fill-box; transform-origin: center; }
+.pkt { opacity: 0; stroke: var(--outline); stroke-width: 2; }
+.pkt-bad { fill: var(--err); }
+.pkt.is-on { opacity: 1; }
 
-@media (max-width: 920px) {
-  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 56px 0 56px; }
-  .diagram svg { max-width: 360px; }
+/* Before the first run the bypass is not drawn yet (only when JS and motion are both on). */
+html.motion .flow.is-idle .stamp-g,
+html.motion .flow.is-idle .barrier { opacity: 0; }
+.flow.is-stamped .stamp-g { animation: stamp-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.flow.is-stamped .barrier { animation: fade-in 0.3s ease both; }
+.pkt-bad.is-shake { animation: shake 0.32s ease; }
+@keyframes stamp-in { from { opacity: 0; transform: scale(1.6) rotate(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-5px); } 60% { transform: translateX(3px); } }
+/* The only loop on the page: two clouds drifting slowly. Off under reduced motion. */
+html.motion .cloud { animation: drift 70s linear infinite alternate; }
+html.motion .cloud-2 { animation-duration: 90s; animation-direction: alternate-reverse; }
+@keyframes drift { from { transform: translateX(-60px); } to { transform: translateX(160px); } }
+
+.flow-ctl { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.flow-btn {
+  min-height: 44px; padding: 0 16px;
+  font: 600 15px var(--sans); color: var(--ink);
+  background: var(--surface); border: 2px solid var(--ink); border-radius: var(--r-sm);
+}
+.flow-btn:hover { background: color-mix(in srgb, var(--l-ctrl) var(--tint), var(--surface)); text-decoration: underline; text-underline-offset: 3px; }
+.flow-btn:active { background: color-mix(in srgb, var(--l-ctrl) 28%, var(--surface)); }
+.flow-btn-bad { border-color: var(--err); color: var(--err); }
+.flow-btn-bad:hover { background: color-mix(in srgb, var(--err) 10%, var(--surface)); }
+.flow-btn-bad:active { background: color-mix(in srgb, var(--err) 16%, var(--surface)); }
+.flow-status {
+  margin: 10px 0 14px auto; max-width: 30em; min-height: 3.2em; padding: 8px 12px;
+  font-size: 15px; color: var(--ink-2); text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm);
 }
 
-/* Statement: full-width typographic break in the rhythm. */
+@media (max-width: 920px) {
+  .hero { padding-top: 48px; }
+  .hero-inner { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .hero-copy { padding-bottom: 0; }
+  .flow-ctl { justify-content: flex-start; }
+  .flow-status { margin-left: 0; }
+  .flow-svg { max-width: 460px; margin-inline: auto; }
+}
+
+/* Statement: full-width typographic break with the violation stamp. */
 .statement { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); }
 .statement-inner { padding: 72px 0; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 64px; align-items: end; }
 .statement h2 { margin: 0; font-size: clamp(1.7rem, 3.6vw, 2.6rem); line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .statement .strike { display: block; color: var(--err); }
+.statement .ly { font-weight: inherit; }
+.stamp {
+  display: inline-block; margin-left: 6px; padding: 2px 10px;
+  font: 600 0.5em/1.5 var(--mono); letter-spacing: 0; vertical-align: 0.35em;
+  color: var(--err); border: 2px solid var(--err); border-radius: var(--r-sm);
+  transform: rotate(-6deg);
+}
+html.motion .statement:not(.is-in) .stamp { opacity: 0; transform: scale(1.8) rotate(-14deg); }
+html.motion .statement.is-in .stamp { transition: opacity 0.25s ease 0.35s, transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.35s; }
 .statement p { margin: 0; color: var(--ink-2); }
 @media (max-width: 920px) { .statement-inner { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 56px 0; } }
 
@@ -203,7 +383,7 @@ h2 { margin: 0 0 10px; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.15;
 .head p { margin: 0; color: var(--ink-2); }
 h3 { margin: 0 0 6px; font-size: 1.1rem; font-weight: 600; }
 
-/* Demo: an ink band in both themes, the page's main focal point (ENERGY 2). */
+/* Demo: an ink band in both themes, the page's main focal point. It always uses the dark hue set. */
 .demo {
   --band: #17160f;
   --band-2: #201f18;
@@ -213,12 +393,16 @@ h3 { margin: 0 0 6px; font-size: 1.1rem; font-weight: 600; }
   --band-dim: #a9a698;
   --band-line: #3a382e;
   --tk-k: #ffa266;
-  --tk-s: #8fdc9e;
+  --tk-s: #9be07f;
   --tk-c: #a9a698;
-  --tk-a: #e8b04b;
+  --tk-a: #efc04f;
   --band-err: #ff8a80;
-  --band-warn: #e8b04b;
-  --band-ok: #7ee08f;
+  --band-warn: #ffa05a;
+  --band-ok: #9be07f;
+  --l-ctrl: #8fadff;
+  --l-svc: #c9a3ff;
+  --l-repo: #4fd0c0;
+  --l-data: #efc04f;
   padding: 96px 0 104px;
   background: var(--band);
   color: var(--band-ink);
@@ -287,22 +471,46 @@ pre { margin: 0; overflow-x: auto; }
 .ln .n { color: var(--band-dim); text-align: right; padding-right: 1em; user-select: none; }
 .ln .t { white-space: pre; }
 .ln.flag { background: rgba(255, 138, 128, 0.12); border-left-color: var(--band-err); }
-.ln.focus { background: rgba(255, 138, 128, 0.24); }
+.ln.focus { background: rgba(255, 138, 128, 0.26); }
 .flag-tag { margin-left: 16px; font: 600 11px var(--mono); color: var(--band-err); white-space: nowrap; }
 .tk-k { color: var(--tk-k); }
 .tk-s { color: var(--tk-s); }
 .tk-c { color: var(--tk-c); font-style: italic; }
 .tk-a { color: var(--tk-a); }
 
+/* The scan: when the demo comes into view or the stack changes, a pass runs down the file
+   and the flagged lines turn red as it reaches them. Then the report prints, finding by finding. */
+.code.scan .ln { animation: ln-scan 0.45s ease calc(var(--i) * var(--step, 12ms)) backwards; }
+.code.scan .ln.flag { animation-name: ln-scan-flag; animation-duration: 0.6s; }
+.code.scan .ln.flag .flag-tag { animation: fade-in 0.25s ease calc(var(--i) * var(--step, 12ms) + 0.2s) backwards; }
+@keyframes ln-scan { 0% { background: rgba(143, 173, 255, 0.22); } 100% { background: transparent; } }
+@keyframes ln-scan-flag {
+  0% { background: rgba(143, 173, 255, 0.22); border-left-color: transparent; }
+  45% { background: rgba(255, 138, 128, 0.4); border-left-color: var(--band-err); }
+  100% { background: rgba(255, 138, 128, 0.12); border-left-color: var(--band-err); }
+}
+.report.scan > * { animation: print-in 0.3s ease calc(var(--base, 0ms) + var(--k) * 120ms) backwards; }
+@keyframes print-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
 .report { display: flex; flex-direction: column; gap: 10px; font-family: var(--mono); font-size: 13px; color: var(--band-ink); overflow: auto; max-height: 560px; }
 .finding {
-  display: flex; flex-direction: column; gap: 4px; text-align: left; width: 100%;
+  display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%;
   padding: 12px; font: inherit; color: inherit;
   background: var(--band-3); border: 1px solid var(--band-line); border-radius: var(--r-sm);
 }
 .finding:hover { border-color: var(--band-err); }
 .finding:active { background: var(--band); }
 .f-head { display: flex; justify-content: space-between; gap: 12px; }
+.f-edge { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.chip {
+  display: inline-block; padding: 1px 8px; border-radius: var(--r-sm);
+  font: 600 12px/1.6 var(--mono); color: var(--h);
+  background: color-mix(in srgb, var(--h) 16%, var(--band-3));
+  border: 1px solid color-mix(in srgb, var(--h) 55%, var(--band-3));
+}
+.chip-q { --h: var(--band-err); }
+.f-edge .arrow { color: var(--band-err); }
 .f-meta { color: var(--band-ink-2); }
 .report .r-err { color: var(--band-err); font-weight: 600; }
 .report .r-warn { color: var(--band-warn); font-weight: 600; }
@@ -311,25 +519,59 @@ pre { margin: 0; overflow-x: auto; }
 .report .r-dim { color: var(--band-dim); margin: 0; }
 .report .r-sum { margin: 6px 0 0; color: var(--band-ink-2); }
 .report .r-final { margin: 0; }
+.r-path { margin: 0; color: var(--band-ink-2); }
 .others ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; color: var(--band-ink-2); }
 .others li, .f-body, .f-meta { overflow-wrap: anywhere; min-width: 0; }
 .noscript { color: var(--band-ink-2); }
 .noscript a { color: var(--band-ink); }
 @media (max-width: 960px) { .panes { grid-template-columns: minmax(0, 1fr); } .code.numbered, .report { max-height: 440px; } }
 
-/* Contract */
+/* Contract: copy on top, then the explorer next to the file it reads from. */
 .contract { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.contract-inner { padding: 88px 0; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: start; }
-.contract-copy p { color: var(--ink-2); margin: 0 0 16px; }
+.contract-inner { padding: 88px 0; }
+.contract-copy { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 0 56px; margin-bottom: 36px; }
+.contract-copy h2 { grid-row: span 3; }
+.contract-copy p { color: var(--ink-2); margin: 0 0 14px; }
+.contract-file { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: start; }
 .contract .code { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg); }
 .y-k { color: var(--code-k); }
 .y-s { color: var(--code-s); }
-@media (max-width: 920px) { .contract-inner { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 64px 0; } }
+.yl { border-radius: 3px; padding: 1px 2px; margin: 0 -2px; transition: background-color 0.2s ease; }
+.yl.is-on { background: color-mix(in srgb, var(--h, var(--line)) 14%, var(--bg)); box-shadow: inset 2px 0 0 var(--h); }
+.yl[data-layer="controller"] { --h: var(--l-ctrl); }
+.yl[data-layer="service"] { --h: var(--l-svc); }
+.yl[data-layer="repository"] { --h: var(--l-repo); }
+.yl[data-layer="model"] { --h: var(--l-data); }
+@media (max-width: 920px) {
+  .contract-inner { padding: 64px 0; }
+  .contract-copy { display: block; }
+  .contract-copy h2 { margin-bottom: 16px; }
+  .contract-file { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+}
 
-/* Identity motif: the approved layer path. */
-.path { display: flex; flex-wrap: wrap; gap: 6px 0; font: 400 14px var(--mono); color: var(--ink) !important; margin: 24px 0 !important; }
-.path span { display: inline-flex; align-items: center; }
-.path span + span::before { content: "→"; color: var(--ink-3); margin: 0 8px; }
+.explorer h3 { margin-bottom: 14px; }
+.ex-rows { display: grid; gap: 14px; position: relative; }
+.ex-row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); align-items: center; gap: 14px; position: relative; }
+.ex-row + .ex-row::before {
+  content: ""; position: absolute; left: 1.4em; top: -14px; height: 14px; width: 2px; background: var(--line-strong);
+}
+.ex-btn {
+  --face: color-mix(in srgb, var(--h) var(--tint), var(--surface));
+  min-height: 48px; padding: 0 14px; text-align: left;
+  font: 600 15px var(--mono); color: var(--h);
+  background: var(--face); border: 1.5px solid var(--h); border-radius: 6px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--h) var(--edge-mix), var(--bg));
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.ex-btn:hover { background: color-mix(in srgb, var(--h) calc(var(--tint) * 1.4), var(--surface)); text-decoration: underline; text-underline-offset: 3px; }
+.ex-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--h) var(--edge-mix), var(--bg)); }
+.ex-btn[aria-pressed="true"] { background: var(--h); color: var(--bg); }
+.ex-verdict { font: 600 13.5px/1.4 var(--mono); }
+.ex-verdict.v-ok { color: var(--ok); }
+.ex-verdict.v-bad { color: var(--err); }
+.ex-verdict.v-self { color: var(--ink-3); font-weight: 400; }
+.ex-out { margin: 18px 0 0; color: var(--ink-2); font-size: 16px; min-height: 4.8em; }
+html:not(.js) .ex-rows { display: none; }
 
 /* Rules */
 .rules { padding: 96px 0 88px; }
@@ -344,16 +586,28 @@ td:nth-child(2) { color: var(--ink-2); min-width: 16em; }
 .sev-e { color: var(--err); }
 .sev-w { color: var(--warn); }
 
-/* Setup: asymmetric command list, then two blocks of unequal width. */
+/* Stacks: a second table with the layer path in mono, coloured by role. */
+.stacks { padding: 0 0 88px; }
+td.mono { font: 400 14px var(--mono); color: var(--ink-3); white-space: nowrap; }
+td.mono .ly { font-weight: 600; }
+@media (max-width: 720px) { td.mono { white-space: normal; } }
+
+/* Setup: a numbered command rail. The rail fills as the reader scrolls through the steps. */
 .start { border-top: 1px solid var(--line); padding: 96px 0 88px; }
-.cmds { list-style: none; counter-reset: step; margin: 0; padding: 0; max-width: 820px; }
-.cmds li { counter-increment: step; position: relative; padding: 0 0 26px 44px; }
-.cmds li::before {
-  content: counter(step); position: absolute; left: 0; top: 10px;
-  font: 600 14px var(--mono); color: var(--accent);
+.cmds { list-style: none; counter-reset: step; margin: 0; padding: 0; max-width: 820px; position: relative; --p: 1; }
+.cmds::before, .cmds::after {
+  content: ""; position: absolute; left: 13px; top: 30px; bottom: 34px; width: 2px; background: var(--line);
 }
-.cmds li::after { content: ""; position: absolute; left: 5px; top: 38px; bottom: 6px; width: 1px; background: var(--line); }
-.cmds li:last-child::after { display: none; }
+.cmds::after { background: var(--accent); transform-origin: top; transform: scaleY(var(--p)); }
+.cmds li { counter-increment: step; position: relative; padding: 0 0 26px 48px; }
+.cmds li::before {
+  content: counter(step); position: absolute; left: 0; top: 8px; z-index: 1;
+  width: 28px; height: 28px; display: grid; place-items: center;
+  font: 600 13px var(--mono); color: var(--accent);
+  background: var(--bg); border: 2px solid var(--accent); border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.cmds li.is-reached::before { background: var(--accent); color: var(--on-accent); }
 .cmd-line {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 4px 4px 4px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
@@ -369,7 +623,7 @@ td:nth-child(2) { color: var(--ink-2); min-width: 16em; }
 .copy:active { background: var(--sunk); }
 .copy[data-state="ok"] { color: var(--ok); border-color: var(--ok); }
 .copy[data-state="error"] { color: var(--err); border-color: var(--err); }
-.copy-status { min-height: 1.6em; margin: 0 0 32px 44px; font-size: 15px; color: var(--ink-3); }
+.copy-status { min-height: 1.6em; margin: 0 0 32px 48px; font-size: 15px; color: var(--ink-3); }
 
 .where { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; }
 .where p { color: var(--ink-2); margin: 0 0 14px; font-size: 16px; }
@@ -389,15 +643,11 @@ td:nth-child(2) { color: var(--ink-2); min-width: 16em; }
 .foot { border-top: 1px solid var(--line); background: var(--surface); }
 .foot-inner { padding: 32px 0 40px; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 32px; align-items: center; font-size: 15px; color: var(--ink-3); }
 .foot p { margin: 0; }
-.foot .credit a { color: var(--ink); }
 .foot-links { display: flex; flex-wrap: wrap; gap: 4px; }
 .foot-links a { color: var(--ink-2); display: inline-flex; min-height: 44px; align-items: center; padding: 0 8px; }
 @media (max-width: 920px) { .foot-inner { grid-template-columns: minmax(0, 1fr); } .foot-links { margin-left: -8px; } }
 
-/* MOTION 1: nothing animates. Kept explicit for anyone adding motion later. */
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-
-/* Stacks: a second table with the layer path in mono, matching the identity motif. */
-.stacks { padding: 0 0 88px; }
-td.mono { font: 400 14px var(--mono); color: var(--ink); white-space: nowrap; }
-@media (max-width: 720px) { td.mono { white-space: normal; } }
+/* Reduced motion: every end state is shown at once and nothing moves on its own. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
